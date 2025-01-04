@@ -9,6 +9,7 @@ from models.battery_entity import BatteryData
 from models.battery_parametres_entity import BatteryParametresData
 from models.battery_status_entity import BatteryStatusData
 from models.charging_status_entity import ChargingStatusData
+from models.discharging_status_entity import DischargerStatusData
 from models.ps_entity import PSData
 from models.controller_entity import ControllerData
 from models.statistiques_entity import StatistiquesData
@@ -125,6 +126,29 @@ class BDDService:
         self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
         logging.info("Données des données de charge sauvegardées avec succès")
         time.sleep(1)
+        
+    # Enregistrement des données de statut de la batterie
+    def save_discharging_status_data(self, discharging_status_data: DischargerStatusData, timestamp):
+        point = Point("discharging_status_data") \
+            .tag("device", "discharging_status_data") \
+            .field("input_voltage_status", discharging_status_data.input_voltage_status) \
+            .field("output_power_load", discharging_status_data.output_power_load) \
+            .field("short_circuit", discharging_status_data.short_circuit) \
+            .field("unable_to_discharge", discharging_status_data.unable_to_discharge) \
+            .field("unable_to_stop_discharging", discharging_status_data.unable_to_stop_discharging) \
+            .field("output_voltage_abnormal", discharging_status_data.output_voltage_abnormal) \
+            .field("input_over_voltage", discharging_status_data.input_over_voltage) \
+            .field("short_circuit_in_high_voltage_side", discharging_status_data.short_circuit_in_high_voltage_side) \
+            .field("boost_over_voltage", discharging_status_data.boost_over_voltage) \
+            .field("output_over_voltage", discharging_status_data.output_over_voltage) \
+            .field("fault", discharging_status_data.fault) \
+            .field("running", discharging_status_data.running) \
+            .time(timestamp)
+        
+        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
+        logging.info("Données des données de décharge sauvegardées avec succès")
+        time.sleep(1)
+
         
     # Enregistrement des paramètres de la batterie
     def save_battery_parameters(self, battery_parametres: BatteryParametresData, timestamp):

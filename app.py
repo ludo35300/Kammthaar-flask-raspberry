@@ -10,6 +10,8 @@ from controller.batterie_parametres_controller import batterie_parametres_contro
 from controller.ps_controller import ps_controller
 from controller.battery_controller import batterie_controller
 from controller.battery_status_controller import batterie_status_controller
+from controller.charging_status_controller import charging_status_controller
+from controller.discharging_status_controller import discharging_status_controller
 from controller.mppt_controller import mppt_controller
 from controller.statistiques_controller import statistiques_controller
 from controller.serveur_controleur import serveur_controller
@@ -56,6 +58,8 @@ def create_app():
     api.register_blueprint(ps_controller)
     api.register_blueprint(batterie_controller)
     api.register_blueprint(batterie_status_controller)
+    api.register_blueprint(charging_status_controller)
+    api.register_blueprint(discharging_status_controller)
     api.register_blueprint(statistiques_controller)
     api.register_blueprint(batterie_parametres_controller)
     api.register_blueprint(serveur_controller)

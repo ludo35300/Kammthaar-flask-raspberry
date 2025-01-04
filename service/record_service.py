@@ -8,12 +8,14 @@ from models.battery_parametres_entity import BatteryParametresData
 from models.battery_status_entity import BatteryStatusData
 from models.charging_status_entity import ChargingStatusData
 from models.controller_entity import ControllerData
+from models.discharging_status_entity import DischargerStatusData
 from models.ps_entity import PSData
 from models.statistiques_entity import StatistiquesData
 from service.batterie_parametres_service import BatterieParametresService
 from service.battery_service import BatterieService
 from service.bdd_service import BDDService
 from service.charger_status_service import ChargingStatusService
+from service.discharger_status_service import DischargerStatusService
 from service.mppt_service import MPPTService
 from service.ps_service import PSService
 from service.statistiques_service import StatistiquesService
@@ -27,6 +29,7 @@ class RecordService:
         self.batterie_service = BatterieService()
         self.batterie_parametres = BatterieParametresService()
         self.charging_status = ChargingStatusService()
+        self.discharger_status = DischargerStatusService()
         self.statistiques_service = StatistiquesService()
         self.mppt_service = MPPTService()
         # Pour continuer l'enregistrement en cas d'arrêt de l'application
@@ -59,6 +62,7 @@ class RecordService:
                 battery_parametres: BatteryParametresData = self.batterie_parametres.read_battery_parametres_data(self.is_connected())
                 battery_status_data: BatteryStatusData = self.batterie_service.read_battery_status_data()
                 charging_status_data: ChargingStatusData = self.charging_status.read_charging_status_data()
+                discharging_status_data: DischargerStatusData = self.discharger_status.read_discharger_status_data()
                 controller_data: ControllerData = self.mppt_service.read_controller_data()
                 statistiques_data: StatistiquesData = self.statistiques_service.read_statistique_data()
                 new_data = {
@@ -68,6 +72,7 @@ class RecordService:
                         "battery_parametres": battery_parametres.to_dict() ,
                         "battery_status_data": battery_status_data.to_dict(),
                         "charging_status_data": charging_status_data.to_dict(),
+                        "discharging_status_data": discharging_status_data.to_dict(),
                         "ps_data": ps_data.to_dict(),
                         "controller_data": controller_data.to_dict(),
                         "statistiques_data": statistiques_data.to_dict(),
@@ -144,6 +149,7 @@ class RecordService:
                         self.bdd_service.save_battery_parameters(BatteryParametresData(**entry["data"]["battery_parametres"]), timestamp)
                         self.bdd_service.save_battery_status_data(BatteryStatusData(**entry["data"]["battery_status_data"]), timestamp)
                         self.bdd_service.save_charging_status_data(ChargingStatusData(**entry["data"]["charging_status_data"]), timestamp)
+                        self.bdd_service.save_discharging_status_data(DischargerStatusData(**entry["data"]["discharging_status_data"]), timestamp)
                         self.bdd_service.save_ps_data(PSData(**entry["data"]["ps_data"]), timestamp)
                         self.bdd_service.save_controller_data(ControllerData(**entry["data"]["controller_data"]), timestamp)
                         self.bdd_service.save_statistiques_data(StatistiquesData(**entry["data"]["statistiques_data"]), timestamp)
