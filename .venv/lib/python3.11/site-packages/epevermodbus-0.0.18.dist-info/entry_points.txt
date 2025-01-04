@@ -1,0 +1,2 @@
+[console_scripts]
+epevermodbus = epevermodbus.command_line:main

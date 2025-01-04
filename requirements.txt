@@ -1,0 +1,10 @@
+flask
+flask-cors
+flask-smorest
+pyserial
+pymodbus
+influxdb-client
+epevermodbus
+psutil
+flask-jwt-extended
+requests
