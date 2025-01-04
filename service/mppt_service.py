@@ -23,6 +23,7 @@ class MPPTService:
         controller_day_time = self.client.is_day()
         controller_night_time = self.client.is_night()
         controller_date = self.client.get_rtc()
+        print(controller_date)
 
         data_controller = ControllerData(controller_load_temperature, controller_load_amperage, controller_load_power, 
                                          controller_load_voltage, controller_day_time, controller_night_time, controller_date)

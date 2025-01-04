@@ -25,10 +25,10 @@ class BDDService:
     def save_battery_data(self, battery_data: BatteryData, timestamp):
         point = Point("battery_data") \
             .tag("device", "battery") \
-            .field("battery_voltage", float(battery_data.battery_voltage)) \
-            .field("battery_amperage", float(battery_data.battery_amperage)) \
-            .field("battery_power", float(battery_data.battery_power)) \
-            .field("battery_temp", float(battery_data.battery_temp)) \
+            .field("battery_voltage", battery_data.battery_voltage) \
+            .field("battery_amperage", battery_data.battery_amperage) \
+            .field("battery_power", battery_data.battery_power) \
+            .field("battery_temp", battery_data.battery_temp) \
             .field("battery_pourcent", battery_data.battery_pourcent) \
             .time(timestamp)
         self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, org=Authentification.INFLUXDB_ORG, record=point)
@@ -39,12 +39,13 @@ class BDDService:
     def save_battery_status_data(self, battery_status_data: BatteryStatusData, timestamp):
         point = Point("battery_status_data") \
             .tag("device", "battery_status_data") \
-            .field("wrong_identifaction_for_rated_voltage", bool(battery_status_data.wrong_identifaction_for_rated_voltage)) \
-            .field("battery_inner_resistence_abnormal", bool(battery_status_data.battery_inner_resistence_abnormal)) \
-            .field("temperature_warning_status", str(battery_status_data.temperature_warning_status)) \
-            .field("battery_status", str(battery_status_data.battery_status)) \
+            .field("wrong_identifaction_for_rated_voltage", battery_status_data.wrong_identifaction_for_rated_voltage) \
+            .field("battery_inner_resistence_abnormal", battery_status_data.battery_inner_resistence_abnormal) \
+            .field("temperature_warning_status", battery_status_data.temperature_warning_status) \
+            .field("battery_status", battery_status_data.battery_status) \
             .time(timestamp)
         self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
+        logging.info("Données du status de la batterie sauvegardées avec succès")
         time.sleep(1)
     
     # Enregistrement des données du panneau solaire
@@ -52,7 +53,7 @@ class BDDService:
         point = Point("ps_data") \
             .tag("device", "solar_panel") \
             .field("voltage", ps_data.ps_voltage) \
-            .field("amperage", float(ps_data.ps_amperage)) \
+            .field("amperage", ps_data.ps_amperage) \
             .field("power", ps_data.ps_power) \
             .time(timestamp)
         self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
@@ -63,10 +64,10 @@ class BDDService:
     def save_controller_data(self, controller_data: ControllerData, timestamp):
         point = Point("controller_data") \
             .tag("device", "controller_data") \
-            .field("voltage", float(controller_data.controller_load_voltage)) \
-            .field("amperage", float(controller_data.controller_load_amperage)) \
-            .field("power", float(controller_data.controller_load_power))\
-            .field("temperature", float(controller_data.controller_temperature))\
+            .field("voltage", controller_data.controller_load_voltage) \
+            .field("amperage", controller_data.controller_load_amperage) \
+            .field("power", controller_data.controller_load_power) \
+            .field("temperature", controller_data.controller_temperature)\
             .field("day_time", controller_data.controller_day_time)\
             .field("night_time", controller_data.controller_night_time) \
             .time(timestamp)
@@ -98,31 +99,31 @@ class BDDService:
     # Enregistrement des paramètres de la batterie
     def save_battery_parameters(self, battery_parametres: BatteryParametresData, timestamp):
         point = Point("batterie_parametres") \
-            .field("rated_charging_current", int(battery_parametres.rated_charging_current)) \
-            .field("rated_load_current", float(battery_parametres.rated_load_current)) \
-            .field("real_rated_voltage", str(battery_parametres.real_rated_voltage.replace("V", "").strip())) \
-            .field("battery_type", str(battery_parametres.battery_type)) \
-            .field("battery_capacity", int(battery_parametres.battery_capacity)) \
-            .field("temp_compensation_coefficient", float(battery_parametres.temp_compensation_coefficient)) \
-            .field("over_voltage_disconnect", int(battery_parametres.over_voltage_disconnect)) \
-            .field("charging_limit_voltage", float(battery_parametres.charging_limit_voltage)) \
-            .field("over_voltage_reconnect", float(battery_parametres.over_voltage_reconnect)) \
-            .field("equalize_charging_voltage", float(battery_parametres.equalize_charging_voltage)) \
-            .field("boost_charging_voltage", float(battery_parametres.boost_charging_voltage)) \
-            .field("float_charging_voltage", float(battery_parametres.float_charging_voltage)) \
-            .field("boost_reconnect_voltage", float(battery_parametres.boost_reconnect_voltage)) \
-            .field("low_voltage_reconnect", float(battery_parametres.low_voltage_reconnect)) \
-            .field("under_voltage_recover", float(battery_parametres.under_voltage_recover)) \
-            .field("under_voltage_warning", float(battery_parametres.under_voltage_warning)) \
-            .field("low_voltage_disconnect", float(battery_parametres.low_voltage_disconnect)) \
-            .field("discharging_limit_voltage", float(battery_parametres.discharging_limit_voltage)) \
-            .field("battery_rated_voltage", float(battery_parametres.real_rated_voltage.replace("V", "").strip())) \
-            .field("default_load_mode", str(battery_parametres.default_load_mode)) \
-            .field("equalize_duration", int(battery_parametres.equalize_duration)) \
-            .field("boost_duration", int(battery_parametres.boost_duration)) \
-            .field("battery_discharge", int(battery_parametres.battery_discharge)) \
-            .field("battery_charge", int(battery_parametres.battery_charge)) \
-            .field("charging_mode", str(battery_parametres.charging_mode)) \
+            .field("rated_charging_current", battery_parametres.rated_charging_current) \
+            .field("rated_load_current", battery_parametres.rated_load_current) \
+            .field("real_rated_voltage", battery_parametres.real_rated_voltage.replace("V", "").strip()) \
+            .field("battery_type", battery_parametres.battery_type) \
+            .field("battery_capacity", battery_parametres.battery_capacity) \
+            .field("temp_compensation_coefficient", battery_parametres.temp_compensation_coefficient) \
+            .field("over_voltage_disconnect", battery_parametres.over_voltage_disconnect) \
+            .field("charging_limit_voltage", battery_parametres.charging_limit_voltage) \
+            .field("over_voltage_reconnect", battery_parametres.over_voltage_reconnect) \
+            .field("equalize_charging_voltage", battery_parametres.equalize_charging_voltage) \
+            .field("boost_charging_voltage", battery_parametres.boost_charging_voltage) \
+            .field("float_charging_voltage", battery_parametres.float_charging_voltage) \
+            .field("boost_reconnect_voltage", battery_parametres.boost_reconnect_voltage) \
+            .field("low_voltage_reconnect", battery_parametres.low_voltage_reconnect) \
+            .field("under_voltage_recover", battery_parametres.under_voltage_recover) \
+            .field("under_voltage_warning", battery_parametres.under_voltage_warning) \
+            .field("low_voltage_disconnect", battery_parametres.low_voltage_disconnect) \
+            .field("discharging_limit_voltage", battery_parametres.discharging_limit_voltage) \
+            .field("battery_rated_voltage", battery_parametres.real_rated_voltage.replace("V", "").strip()) \
+            .field("default_load_mode", battery_parametres.default_load_mode) \
+            .field("equalize_duration", battery_parametres.equalize_duration) \
+            .field("boost_duration", battery_parametres.boost_duration) \
+            .field("battery_discharge", battery_parametres.battery_discharge) \
+            .field("battery_charge", battery_parametres.battery_charge) \
+            .field("charging_mode", battery_parametres.charging_mode) \
             .time(timestamp)
         self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
         logging.info("Données des paramètres de la batterie sauvegardées avec succès")

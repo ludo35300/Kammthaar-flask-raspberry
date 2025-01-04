@@ -1,6 +1,7 @@
 import threading, time, json, os, traceback, requests
 
 from datetime import datetime
+from constantes.authentification import Authentification
 from constantes.config import Config
 from models.battery_entity import BatteryData
 from models.battery_parametres_entity import BatteryParametresData
@@ -33,7 +34,7 @@ class RecordService:
     def is_connected(self):
         """Vérifie si l'application est connectée à Internet en vérifiant la connexion à la BDD."""
         try:
-            requests.get(Config.INFLUXDB_URL, timeout=3)
+            requests.get(Authentification.INFLUXDB_URL, timeout=3)
             return True
         except requests.ConnectionError:
             return False
@@ -50,12 +51,14 @@ class RecordService:
                 # Lecture des données
                 ps_data = self.ps_service.read_ps_data()
                 battery_data = self.batterie_service.read_battery_data()
+                battery_status_data = self.batterie_service.read_battery_status_data()
                 controller_data = self.mppt_service.read_controller_data()
                 statistiques_data = self.statistiques_service.read_statistique_data()
                 new_data = {
                     "timestamp": datetime.now().isoformat(),
                     "data": {
                         "battery_data": battery_data.to_dict(),
+                        "battery_status_data": battery_status_data.to_dict(),
                         "ps_data": ps_data.to_dict(),
                         "controller_data": controller_data.to_dict(),
                         "statistiques_data": statistiques_data.to_dict(),
@@ -129,6 +132,7 @@ class RecordService:
                     try:
                         timestamp = entry["timestamp"]
                         self.bdd_service.save_battery_data(BatteryData(**entry["data"]["battery_data"]), timestamp)
+                        self.bdd_service.save_battery_status_data(BatteryStatusData(**entry["data"]["battery_status_data"]), timestamp)
                         self.bdd_service.save_ps_data(PSData(**entry["data"]["ps_data"]), timestamp)
                         self.bdd_service.save_controller_data(ControllerData(**entry["data"]["controller_data"]), timestamp)
                         self.bdd_service.save_statistiques_data(StatistiquesData(**entry["data"]["statistiques_data"]), timestamp)
