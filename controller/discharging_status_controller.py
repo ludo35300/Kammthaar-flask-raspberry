@@ -15,4 +15,4 @@ def get_charging_status_data():
     if data is None:
         return jsonify({"error": "Erreur de communication avec la batterie"}), 500
 
-    return data.to_dict, 200
+    return jsonify(data.to_dict()), 200

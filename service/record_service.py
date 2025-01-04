@@ -111,15 +111,12 @@ class RecordService:
                         # Si le fichier est vide ou corrompu, on initialise une liste vide
                         print("Fichier JSON vide ou corrompu, initialisation des données.")
                         local_data = []
-
-                    # Ajout des nouvelles données
+                        
                     local_data.append(data)
-
                     # Réécriture des données dans le fichier
                     f.seek(0)
                     json.dump(local_data, f, indent=4)
-                    f.truncate()  # Supprime tout contenu résiduel au-delà de la nouvelle écriture
-
+                    f.truncate()  # Supprime tout contenu résiduel au-delà des nouvelles données
                 print("Données sauvegardées localement.")
         except Exception as e:
             print(f"Erreur lors de la sauvegarde locale : {e}")
@@ -130,16 +127,11 @@ class RecordService:
         """Synchronise les données locales avec InfluxDB et vide le fichier local."""
         try:
             with self.file_lock:
-                if not os.path.exists(Config.LOCAL_STORAGE_PATH):
-                    print("Aucune donnée locale à synchroniser.")
-                    return
-
-                if os.path.getsize(Config.LOCAL_STORAGE_PATH) == 0:  # Vérifie si le fichier est vide
-                    print("Fichier local vide, aucune donnée à synchroniser.")
+                # Si le fichier n'existe pas ou s'il est vide
+                if not os.path.exists(Config.LOCAL_STORAGE_PATH) or os.path.getsize(Config.LOCAL_STORAGE_PATH) == 0:
                     return
                 
                 with open(Config.LOCAL_STORAGE_PATH, "r") as f:
-                    
                     local_data = json.load(f)
 
                 for entry in local_data:

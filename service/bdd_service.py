@@ -1,9 +1,7 @@
+import logging, influxdb_client, time, requests, json
 from datetime import datetime, timezone
-import json
-import logging, influxdb_client, time
 from influxdb_client import Point
 from influxdb_client.client.write_api import SYNCHRONOUS
-import requests
 from constantes.authentification import Authentification
 from models.battery_entity import BatteryData
 from models.battery_parametres_entity import BatteryParametresData
@@ -18,170 +16,176 @@ from models.statistiques_entity import StatistiquesData
 class BDDService:
      # Initialisation de la BDD InfluxDB
     def __init__(self):
-        
-
         try:
             self.client = influxdb_client.InfluxDBClient(url=Authentification.INFLUXDB_URL, token=Authentification.INFLUXDB_TOKEN, org=Authentification.INFLUXDB_ORG, timeout=5000)
-            logging.basicConfig(level=logging.DEBUG)
+            logging.basicConfig(level=logging.DEBUG, encoding='utf-8')
             self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
             self.query_api = self.client.query_api()
         except Exception as e:
             print(f"Erreur de connexion à InfluxDB 2.0': {e}")
             
+    def save_data(self, measurement_name, tags, fields, timestamp):
+        """
+        Fonction générique pour sauvegarder des données dans InfluxDB.
+        
+        Args:
+            measurement_name (str): Nom de la mesure (par exemple, "battery_data").
+            tags (dict): Tags pour la mesure (par exemple, {"device": "battery"}).
+            fields (dict): Champs à enregistrer dans la mesure.
+            timestamp (datetime): Heure à laquelle les données doivent être associées.
+        """
+        point = Point(measurement_name) \
+            .tag("device", tags.get("device", "unknown_device"))  # Utilise un tag générique par défaut
+        
+        # Ajoute les champs à l'instance du point
+        for field_name, field_value in fields.items():
+            point = point.field(field_name, field_value)
+        
+        point = point.time(timestamp)
+        
+        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, org=Authentification.INFLUXDB_ORG, record=point)
+        logging.info(f"Données de {measurement_name} sauvegardées avec succès")
+        time.sleep(1)
+            
     
             
     # Enregistrement des données de la batterie
     def save_battery_data(self, battery_data: BatteryData, timestamp):
-        point = Point("battery_data") \
-            .tag("device", "battery") \
-            .field("battery_voltage", battery_data.battery_voltage) \
-            .field("battery_amperage", battery_data.battery_amperage) \
-            .field("battery_power", battery_data.battery_power) \
-            .field("battery_temp", battery_data.battery_temp) \
-            .field("battery_pourcent", battery_data.battery_pourcent) \
-            .time(timestamp)
-        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, org=Authentification.INFLUXDB_ORG, record=point)
-        logging.info("Données de la batterie sauvegardées avec succès")
-        time.sleep(1) 
+        fields = {
+            "battery_voltage": battery_data.battery_voltage,
+            "battery_amperage": battery_data.battery_amperage,
+            "battery_power": battery_data.battery_power,
+            "battery_temp": battery_data.battery_temp,
+            "battery_pourcent": battery_data.battery_pourcent
+        }
+        tags = {"device": "battery"}
+        self.save_data("battery_data", tags, fields, timestamp)
         
     # Enregistrement des informations du status de la batterie
     def save_battery_status_data(self, battery_status_data: BatteryStatusData, timestamp):
-        point = Point("battery_status_data") \
-            .tag("device", "battery_status_data") \
-            .field("wrong_identifaction_for_rated_voltage", battery_status_data.wrong_identifaction_for_rated_voltage) \
-            .field("battery_inner_resistence_abnormal", battery_status_data.battery_inner_resistence_abnormal) \
-            .field("temperature_warning_status", battery_status_data.temperature_warning_status) \
-            .field("battery_status", battery_status_data.battery_status) \
-            .time(timestamp)
-        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
-        logging.info("Données du status de la batterie sauvegardées avec succès")
-        time.sleep(1)
+        fields = {
+            "wrong_identifaction_for_rated_voltage": battery_status_data.wrong_identifaction_for_rated_voltage,
+            "battery_inner_resistence_abnormal": battery_status_data.battery_inner_resistence_abnormal,
+            "temperature_warning_status": battery_status_data.temperature_warning_status,
+            "battery_status": battery_status_data.battery_status
+        }
+        tags = {"device": "battery_status_data"}
+        self.save_data("battery_status_data", tags, fields, timestamp)
     
     # Enregistrement des données du panneau solaire
     def save_ps_data(self, ps_data: PSData, timestamp):
-        point = Point("ps_data") \
-            .tag("device", "solar_panel") \
-            .field("voltage", ps_data.ps_voltage) \
-            .field("amperage", ps_data.ps_amperage) \
-            .field("power", ps_data.ps_power) \
-            .time(timestamp)
-        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
-        logging.info("Données du panneau solaire sauvegardées avec succès")
-        time.sleep(1)
+        fields = {
+            "voltage": ps_data.ps_voltage,
+            "amperage": ps_data.ps_amperage,
+            "power": ps_data.ps_power
+        }
+        tags = {"device": "solar_panel"}
+        self.save_data("ps_data", tags, fields, timestamp)
 
     #  Enregistrement des données du controller MPPT
     def save_controller_data(self, controller_data: ControllerData, timestamp):
-        point = Point("controller_data") \
-            .tag("device", "controller_data") \
-            .field("voltage", controller_data.controller_load_voltage) \
-            .field("amperage", controller_data.controller_load_amperage) \
-            .field("power", controller_data.controller_load_power) \
-            .field("temperature", controller_data.controller_temperature)\
-            .field("day_time", controller_data.controller_day_time)\
-            .field("night_time", controller_data.controller_night_time) \
-            .time(timestamp)
-        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
-        logging.info("Données du controlleur MPPT sauvegardées avec succès")
-        time.sleep(1) 
+        fields = {
+            "voltage": controller_data.controller_load_voltage,
+            "amperage": controller_data.controller_load_amperage,
+            "power": controller_data.controller_load_power,
+            "temperature": controller_data.controller_temperature,
+            "day_time": controller_data.controller_day_time,
+            "night_time": controller_data.controller_night_time,
+        }
+        tags = {"device": "controller_data"}
+        self.save_data("controller_data", tags, fields, timestamp)
+        
 
     # Enregistrement des statistiques
     def save_statistiques_data(self, statistiques_data: StatistiquesData, timestamp):
-        point = Point("statistiques_data") \
-            .tag("device", "statistiques_data") \
-            .field("max_battery_voltage_today", statistiques_data.max_battery_voltage_today)\
-            .field("min_battery_voltage_today", statistiques_data.min_battery_voltage_today)\
-            .field("max_ps_voltage_today", statistiques_data.max_ps_voltage_today)\
-            .field("min_ps_voltage_today", statistiques_data.min_ps_voltage_today)\
-            .field("consumed_energy_today", statistiques_data.consumed_energy_today)\
-            .field("consumed_energy_month", statistiques_data.consumed_energy_month)\
-            .field("consumed_energy_year", statistiques_data.consumed_energy_year)\
-            .field("consumed_energy_total", statistiques_data.consumed_energy_total)\
-            .field("generated_energy_today", statistiques_data.generated_energy_today)\
-            .field("generated_energy_month", statistiques_data.generated_energy_month)\
-            .field("generated_energy_year", statistiques_data.generated_energy_year)\
-            .field("generated_energy_total", statistiques_data.generated_energy_total) \
-            .time(timestamp)
-        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
-        logging.info("Données des satistiques sauvegardées avec succès")
-        time.sleep(1)
+        fields = {
+            "max_battery_voltage_today": statistiques_data.max_battery_voltage_today,
+            "min_battery_voltage_today": statistiques_data.min_battery_voltage_today,
+            "max_ps_voltage_today": statistiques_data.max_ps_voltage_today,
+            "min_ps_voltage_today": statistiques_data.min_ps_voltage_today,
+            "consumed_energy_today": statistiques_data.consumed_energy_today,
+            "consumed_energy_month": statistiques_data.consumed_energy_month,
+            "consumed_energy_year": statistiques_data.consumed_energy_year,
+            "consumed_energy_total": statistiques_data.consumed_energy_total,
+            "generated_energy_today": statistiques_data.generated_energy_today,
+            "generated_energy_month": statistiques_data.generated_energy_month,
+            "generated_energy_year": statistiques_data.generated_energy_year,
+            "generated_energy_total": statistiques_data.generated_energy_total
+        }
+        tags = {"device": "statistiques_data"}
+        self.save_data("statistiques_data", tags, fields, timestamp)
         
     # Enregistrement des données de status de la charge
     def save_charging_status_data(self, charging_status_data: ChargingStatusData, timestamp):
-        point = Point("charging_status_data") \
-            .tag("device", "charging_status_data") \
-            .field("input_voltage_status", charging_status_data.input_voltage_status)\
-            .field("charging_mosfet_is_short_circuit", charging_status_data.charging_mosfet_is_short_circuit)\
-            .field("charging_or_anti_reverse_mosfet_is_open_circuit", charging_status_data.charging_or_anti_reverse_mosfet_is_open_circuit)\
-            .field("anti_reverse_mosfet_is_short_circuit", charging_status_data.anti_reverse_mosfet_is_short_circuit)\
-            .field("input_over_current", charging_status_data.input_over_current)\
-            .field("load_over_current", charging_status_data.load_over_current)\
-            .field("load_short_circuit", charging_status_data.load_short_circuit)\
-            .field("load_mosfet_short_circuit", charging_status_data.load_mosfet_short_circuit)\
-            .field("disequilibrium_in_three_circuits", charging_status_data.disequilibrium_in_three_circuits)\
-            .field("pv_input_short_circuit", charging_status_data.pv_input_short_circuit)\
-            .field("charging_status", charging_status_data.charging_status)\
-            .field("fault", charging_status_data.fault) \
-            .field("running", charging_status_data.running) \
-            .time(timestamp)
-        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
-        logging.info("Données des données de charge sauvegardées avec succès")
-        time.sleep(1)
+        fields = {
+            "input_voltage_status": charging_status_data.input_voltage_status,
+            "charging_mosfet_is_short_circuit": charging_status_data.charging_mosfet_is_short_circuit,
+            "charging_or_anti_reverse_mosfet_is_open_circuit": charging_status_data.charging_or_anti_reverse_mosfet_is_open_circuit,
+            "anti_reverse_mosfet_is_short_circuit": charging_status_data.anti_reverse_mosfet_is_short_circuit,
+            "input_over_current": charging_status_data.input_over_current,
+            "load_over_current": charging_status_data.load_over_current,
+            "load_short_circuit": charging_status_data.load_short_circuit,
+            "load_mosfet_short_circuit": charging_status_data.load_mosfet_short_circuit,
+            "disequilibrium_in_three_circuits": charging_status_data.disequilibrium_in_three_circuits,
+            "pv_input_short_circuit": charging_status_data.pv_input_short_circuit,
+            "charging_status": charging_status_data.charging_status,
+            "fault": charging_status_data.fault,
+            "running": charging_status_data.running
+        }
+        tags = {"device": "charging_status_data"}
+        self.save_data("charging_status_data", tags, fields, timestamp)
         
     # Enregistrement des données de statut de la batterie
     def save_discharging_status_data(self, discharging_status_data: DischargerStatusData, timestamp):
-        point = Point("discharging_status_data") \
-            .tag("device", "discharging_status_data") \
-            .field("input_voltage_status", discharging_status_data.input_voltage_status) \
-            .field("output_power_load", discharging_status_data.output_power_load) \
-            .field("short_circuit", discharging_status_data.short_circuit) \
-            .field("unable_to_discharge", discharging_status_data.unable_to_discharge) \
-            .field("unable_to_stop_discharging", discharging_status_data.unable_to_stop_discharging) \
-            .field("output_voltage_abnormal", discharging_status_data.output_voltage_abnormal) \
-            .field("input_over_voltage", discharging_status_data.input_over_voltage) \
-            .field("short_circuit_in_high_voltage_side", discharging_status_data.short_circuit_in_high_voltage_side) \
-            .field("boost_over_voltage", discharging_status_data.boost_over_voltage) \
-            .field("output_over_voltage", discharging_status_data.output_over_voltage) \
-            .field("fault", discharging_status_data.fault) \
-            .field("running", discharging_status_data.running) \
-            .time(timestamp)
-        
-        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
-        logging.info("Données des données de décharge sauvegardées avec succès")
-        time.sleep(1)
+        fields = {
+            "input_voltage_status": discharging_status_data.input_voltage_status,
+            "output_power_load": discharging_status_data.output_power_load,
+            "short_circuit": discharging_status_data.short_circuit,
+            "unable_to_discharge": discharging_status_data.unable_to_discharge,
+            "unable_to_stop_discharging": discharging_status_data.unable_to_stop_discharging,
+            "output_voltage_abnormal": discharging_status_data.output_voltage_abnormal,
+            "input_over_voltage": discharging_status_data.input_over_voltage,
+            "short_circuit_in_high_voltage_side": discharging_status_data.short_circuit_in_high_voltage_side,
+            "boost_over_voltage": discharging_status_data.boost_over_voltage,
+            "output_over_voltage": discharging_status_data.output_over_voltage,
+            "fault": discharging_status_data.fault,
+            "running": discharging_status_data.running
+        }
+        tags = {"device": "discharging_status_data"}
+        self.save_data("discharging_status_data", tags, fields, timestamp)
 
         
     # Enregistrement des paramètres de la batterie
     def save_battery_parameters(self, battery_parametres: BatteryParametresData, timestamp):
-        point = Point("batterie_parametres") \
-            .field("rated_charging_current", battery_parametres.rated_charging_current) \
-            .field("rated_load_current", battery_parametres.rated_load_current) \
-            .field("real_rated_voltage", battery_parametres.real_rated_voltage.replace("V", "").strip()) \
-            .field("battery_type", battery_parametres.battery_type) \
-            .field("battery_capacity", battery_parametres.battery_capacity) \
-            .field("temp_compensation_coefficient", battery_parametres.temp_compensation_coefficient) \
-            .field("over_voltage_disconnect", battery_parametres.over_voltage_disconnect) \
-            .field("charging_limit_voltage", battery_parametres.charging_limit_voltage) \
-            .field("over_voltage_reconnect", battery_parametres.over_voltage_reconnect) \
-            .field("equalize_charging_voltage", battery_parametres.equalize_charging_voltage) \
-            .field("boost_charging_voltage", battery_parametres.boost_charging_voltage) \
-            .field("float_charging_voltage", battery_parametres.float_charging_voltage) \
-            .field("boost_reconnect_voltage", battery_parametres.boost_reconnect_voltage) \
-            .field("low_voltage_reconnect", battery_parametres.low_voltage_reconnect) \
-            .field("under_voltage_recover", battery_parametres.under_voltage_recover) \
-            .field("under_voltage_warning", battery_parametres.under_voltage_warning) \
-            .field("low_voltage_disconnect", battery_parametres.low_voltage_disconnect) \
-            .field("discharging_limit_voltage", battery_parametres.discharging_limit_voltage) \
-            .field("battery_rated_voltage", battery_parametres.real_rated_voltage.replace("V", "").strip()) \
-            .field("default_load_mode", battery_parametres.default_load_mode) \
-            .field("equalize_duration", battery_parametres.equalize_duration) \
-            .field("boost_duration", battery_parametres.boost_duration) \
-            .field("battery_discharge", battery_parametres.battery_discharge) \
-            .field("battery_charge", battery_parametres.battery_charge) \
-            .field("charging_mode", battery_parametres.charging_mode) \
-            .time(timestamp)
-        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
-        logging.info("Données des paramètres de la batterie sauvegardées avec succès")
-        time.sleep(1) 
+        fields = {
+            "rated_charging_current": battery_parametres.rated_charging_current,
+            "rated_load_current": battery_parametres.rated_load_current,
+            "real_rated_voltage": battery_parametres.real_rated_voltage.replace("V", "").strip(),
+            "battery_type": battery_parametres.battery_type,
+            "battery_capacity": battery_parametres.battery_capacity,
+            "temp_compensation_coefficient": battery_parametres.temp_compensation_coefficient,
+            "over_voltage_disconnect": battery_parametres.over_voltage_disconnect,
+            "charging_limit_voltage": battery_parametres.charging_limit_voltage,
+            "over_voltage_reconnect": battery_parametres.over_voltage_reconnect,
+            "equalize_charging_voltage": battery_parametres.equalize_charging_voltage,
+            "boost_charging_voltage": battery_parametres.boost_charging_voltage,
+            "float_charging_voltage": battery_parametres.float_charging_voltage,
+            "boost_reconnect_voltage": battery_parametres.boost_reconnect_voltage,
+            "low_voltage_reconnect": battery_parametres.low_voltage_reconnect,
+            "under_voltage_recover": battery_parametres.under_voltage_recover,
+            "under_voltage_warning": battery_parametres.under_voltage_warning,
+            "low_voltage_disconnect": battery_parametres.low_voltage_disconnect,
+            "discharging_limit_voltage": battery_parametres.discharging_limit_voltage,
+            "battery_rated_voltage": battery_parametres.real_rated_voltage.replace("V", "").strip(),
+            "default_load_mode": battery_parametres.default_load_mode,
+            "equalize_duration": battery_parametres.equalize_duration,
+            "boost_duration": battery_parametres.boost_duration,
+            "battery_discharge": battery_parametres.battery_discharge,
+            "battery_charge": battery_parametres.battery_charge,
+            "charging_mode": battery_parametres.charging_mode
+        }
+        tags = {"device": "batterie_parametres"}
+        self.save_data("batterie_parametres", tags, fields, timestamp)
 
     # Récupération des paramètres de la batterie dans la base de données
     def get_battery_parameters(self):
@@ -248,10 +252,7 @@ class BDDService:
         Returns:
         - Response (str): Message de la réponse de l'API InfluxDB.
         """
-        # Construire l'URL pour l'API DELETE
         url = f"{Authentification.INFLUXDB_URL}/api/v2/delete"
-
-        # Obtenir les timestamps au format RFC3339Nano
         start_time = "1970-01-01T00:00:00Z"  # Date de début fixe
         stop_time = datetime.now(timezone.utc).isoformat()  # Date actuelle au format RFC3339Nano
 
@@ -261,20 +262,17 @@ class BDDService:
             "start": start_time,
             "stop": stop_time,
         }
-
         # Ajouter le token d'authentification dans les headers
         headers = {
             "Authorization": f"Token {Authentification.INFLUXDB_TOKEN}",
             "Content-Type": "application/json",
         }
-
         # Ajouter les paramètres de l'URL
         params = {
             "org": Authentification.INFLUXDB_ORG,
             "bucket": Authentification.INFLUXDB_BUCKET,
         }
 
-        # Faire la requête DELETE
         response = requests.post(url, headers=headers, params=params, data=json.dumps(body))
 
         # Vérifier la réponse de la requête
