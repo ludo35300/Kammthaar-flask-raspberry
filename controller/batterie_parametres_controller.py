@@ -12,12 +12,9 @@ batterie_parametres_controller = Blueprint('batterie_parametres_controller', __n
 @jwt_required()
 def get_battery_parametres_data():
     service = BatterieParametresService()
-    parametres_battery = service.read_battery_parametres_data()
+    parametres_battery: BatteryParametresData = service.read_battery_parametres_data()
 
     if parametres_battery is None:
         return jsonify({"error": "Erreur de communication avec le contrôleur MPPT"}), 500
 
-    # Utilisation de la méthode `to_dict()` pour convertir l'objet en dictionnaire
-    battery_data: BatteryParametresData = parametres_battery
-
-    return jsonify(battery_data.to_dict()), 200
+    return jsonify(parametres_battery.to_dict()), 200

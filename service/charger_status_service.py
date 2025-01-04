@@ -44,5 +44,4 @@ class ChargingStatusService:
             fault,
             running,
         )
-        print(data_status_charging)
         return data_status_charging
