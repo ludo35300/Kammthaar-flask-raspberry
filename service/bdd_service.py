@@ -1,10 +1,7 @@
-from datetime import datetime
-import logging
-import influxdb_client, time, os
-from flask import json
+import logging, influxdb_client, time
 from influxdb_client import Point
 from influxdb_client.client.write_api import SYNCHRONOUS
-from constantes.config import Config
+from constantes.authentification import Authentification
 from models.battery_entity import BatteryData
 from models.battery_parametres_entity import BatteryParametresData
 from models.battery_status_entity import BatteryStatusData
@@ -13,19 +10,18 @@ from models.controller_entity import ControllerData
 from models.statistiques_entity import StatistiquesData
 
 
-class BDDService:    
+class BDDService:
+     # Initialisation de la BDD InfluxDB
     def __init__(self):
-        # Initialisation de la BDD InfluxDB
         try:
-            self.client = influxdb_client.InfluxDBClient(url=Config.INFLUXDB_URL, token=Config.INFLUXDB_TOKEN, org=Config.INFLUXDB_ORG, timeout=5000)
+            self.client = influxdb_client.InfluxDBClient(url=Authentification.INFLUXDB_URL, token=Authentification.INFLUXDB_TOKEN, org=Authentification.INFLUXDB_ORG, timeout=5000)
             logging.basicConfig(level=logging.DEBUG)
             self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
             self.query_api = self.client.query_api()
         except Exception as e:
             print(f"Erreur de connexion à InfluxDB 2.0': {e}")
-
- 
-        
+            
+    # Enregistrement des données de la batterie
     def save_battery_data(self, battery_data: BatteryData, timestamp):
         point = Point("battery_data") \
             .tag("device", "battery") \
@@ -35,24 +31,23 @@ class BDDService:
             .field("battery_temp", float(battery_data.battery_temp)) \
             .field("battery_pourcent", battery_data.battery_pourcent) \
             .time(timestamp)
-        self.write_api.write(bucket=Config.INFLUXDB_BUCKET, org=Config.INFLUXDB_ORG, record=point)
+        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, org=Authentification.INFLUXDB_ORG, record=point)
         logging.info("Données de la batterie sauvegardées avec succès")
         time.sleep(1) 
         
+    # Enregistrement des informations du status de la batterie
     def save_battery_status_data(self, battery_status_data: BatteryStatusData, timestamp):
-        try:
-            point = Point("battery_status_data") \
-                .tag("device", "battery_status_data") \
-                .field("wrong_identifaction_for_rated_voltage", bool(battery_status_data.wrong_identifaction_for_rated_voltage)) \
-                .field("battery_inner_resistence_abnormal", bool(battery_status_data.battery_inner_resistence_abnormal)) \
-                .field("temperature_warning_status", str(battery_status_data.temperature_warning_status)) \
-                .field("battery_status", str(battery_status_data.battery_status)) \
-                .time(timestamp)
-            self.write_api.write(bucket=Config.INFLUXDB_BUCKET, record=point)
-            time.sleep(1)
-        except Exception as e:
-            print(f"Erreur lors de l'enregistrement des données de status de la batterie': {e}")
-
+        point = Point("battery_status_data") \
+            .tag("device", "battery_status_data") \
+            .field("wrong_identifaction_for_rated_voltage", bool(battery_status_data.wrong_identifaction_for_rated_voltage)) \
+            .field("battery_inner_resistence_abnormal", bool(battery_status_data.battery_inner_resistence_abnormal)) \
+            .field("temperature_warning_status", str(battery_status_data.temperature_warning_status)) \
+            .field("battery_status", str(battery_status_data.battery_status)) \
+            .time(timestamp)
+        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
+        time.sleep(1)
+    
+    # Enregistrement des données du panneau solaire
     def save_ps_data(self, ps_data: PSData, timestamp):
         point = Point("ps_data") \
             .tag("device", "solar_panel") \
@@ -60,10 +55,11 @@ class BDDService:
             .field("amperage", float(ps_data.ps_amperage)) \
             .field("power", ps_data.ps_power) \
             .time(timestamp)
-        self.write_api.write(bucket=Config.INFLUXDB_BUCKET, record=point)
+        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
         logging.info("Données du panneau solaire sauvegardées avec succès")
-        time.sleep(1) 
+        time.sleep(1)
 
+    #  Enregistrement des données du controller MPPT
     def save_controller_data(self, controller_data: ControllerData, timestamp):
         point = Point("controller_data") \
             .tag("device", "controller_data") \
@@ -74,10 +70,11 @@ class BDDService:
             .field("day_time", controller_data.controller_day_time)\
             .field("night_time", controller_data.controller_night_time) \
             .time(timestamp)
-        self.write_api.write(bucket=Config.INFLUXDB_BUCKET, record=point)
+        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
         logging.info("Données du controlleur MPPT sauvegardées avec succès")
         time.sleep(1) 
 
+    # Enregistrement des statistiques
     def save_statistiques_data(self, statistiques_data: StatistiquesData, timestamp):
         point = Point("statistiques_data") \
             .tag("device", "statistiques_data") \
@@ -94,11 +91,11 @@ class BDDService:
             .field("generated_energy_year", statistiques_data.generated_energy_year)\
             .field("generated_energy_total", statistiques_data.generated_energy_total) \
             .time(timestamp)
-        self.write_api.write(bucket=Config.INFLUXDB_BUCKET, record=point)
+        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
         logging.info("Données des satistiques sauvegardées avec succès")
-        time.sleep(1) 
-
-    
+        time.sleep(1)
+        
+    # Enregistrement des paramètres de la batterie
     def save_battery_parameters(self, battery_parametres: BatteryParametresData, timestamp):
         point = Point("batterie_parametres") \
             .field("rated_charging_current", int(battery_parametres.rated_charging_current)) \
@@ -127,34 +124,28 @@ class BDDService:
             .field("battery_charge", int(battery_parametres.battery_charge)) \
             .field("charging_mode", str(battery_parametres.charging_mode)) \
             .time(timestamp)
+        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
+        logging.info("Données des paramètres de la batterie sauvegardées avec succès")
+        time.sleep(1) 
 
-        # Écriture dans la base de données
-        self.write_api.write(bucket=Config.INFLUXDB_BUCKET, org=Config.INFLUXDB_ORG, record=point)
-
-
-    #TODO A METTRE DANS BATTERIE PARAMETRES SERVICE
+    # Récupération des paramètres de la batterie dans la base de données
     def get_battery_parameters(self):
-
-        # Construire la requête pour récupérer les paramètres de batterie
         query = f'''
-        from(bucket: "{Config.INFLUXDB_BUCKET}")
+        from(bucket: "{Authentification.INFLUXDB_BUCKET}")
         |> range(start: -1d)   // Durée de recherche
         |> filter(fn: (r) => r._measurement == "batterie_parametres")
         |> last()              // Dernier enregistrement
         '''
-
         try:
-            # Exécuter la requête InfluxDB
-            result = self.query_api.query(org=Config.INFLUXDB_ORG, query=query)
-
-            # Initialiser un dictionnaire pour stocker les valeurs de paramètres
+            result = self.query_api.query(org=Authentification.INFLUXDB_ORG, query=query)
+            # On initialise un dictionnaire pour stocker les valeurs de paramètres
             params = {}
 
-            # Parcourir tous les enregistrements pour remplir le dictionnaire de paramètres
+            # On parcourt tous les enregistrements
             for table in result:
                 for record in table.records:
-                    field = record.get_field()  # Nom du champ
-                    value = record.get_value()  # Valeur du champ
+                    field = record.get_field()
+                    value = record.get_value()
                     params[field] = value
 
             # Créer l'instance de BatteryParametresData avec les paramètres récupérés
@@ -189,41 +180,5 @@ class BDDService:
 
         except Exception as e:
             print("Erreur lors de la récupération des paramètres de batterie :", e)
-
         # Si aucune donnée n'est trouvée ou en cas d'erreur
         return None
-
-# A SUPPRIMER
-    # def save_local_data(self, data):
-    #     """Sauvegarde les données dans un fichier local."""
-    #     if not os.path.exists(Config.LOCAL_STORAGE_PATH):
-    #         with open(Config.LOCAL_STORAGE_PATH, 'w') as f:
-    #             json.dump([], f)
-
-    #     with open(Config.LOCAL_STORAGE_PATH, 'r+') as f:
-    #         local_data = json.load(f)
-    #         local_data.append(data)
-    #         f.seek(0)
-    #         json.dump(local_data, f)
-
-    # def sync_local_data_to_cloud(self):
-    #     """Synchronise les données locales avec InfluxDB Cloud."""
-    #     if not os.path.exists(Config.LOCAL_STORAGE_PATH):
-    #         return
-
-    #     with open(Config.LOCAL_STORAGE_PATH, 'r') as f:
-    #         local_data = json.load(f)
-
-    #     for data in local_data:
-    #         try:
-    #             self.write_api.write(
-    #                 bucket=Config.INFLUXDB_BUCKET,
-    #                 org=Config.INFLUXDB_ORG,
-    #                 record=data
-    #             )
-    #         except Exception as e:
-    #             print(f"Erreur de synchronisation des données vers le cloud : {e}")
-    #             return
-
-    #     # Si toutes les données sont synchronisées, on vide le fichier
-    #     os.remove(Config.LOCAL_STORAGE_PATH)
