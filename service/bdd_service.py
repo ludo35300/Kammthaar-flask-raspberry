@@ -1,10 +1,14 @@
+from datetime import datetime, timezone
+import json
 import logging, influxdb_client, time
 from influxdb_client import Point
 from influxdb_client.client.write_api import SYNCHRONOUS
+import requests
 from constantes.authentification import Authentification
 from models.battery_entity import BatteryData
 from models.battery_parametres_entity import BatteryParametresData
 from models.battery_status_entity import BatteryStatusData
+from models.charging_status_entity import ChargingStatusData
 from models.ps_entity import PSData
 from models.controller_entity import ControllerData
 from models.statistiques_entity import StatistiquesData
@@ -13,6 +17,8 @@ from models.statistiques_entity import StatistiquesData
 class BDDService:
      # Initialisation de la BDD InfluxDB
     def __init__(self):
+        
+
         try:
             self.client = influxdb_client.InfluxDBClient(url=Authentification.INFLUXDB_URL, token=Authentification.INFLUXDB_TOKEN, org=Authentification.INFLUXDB_ORG, timeout=5000)
             logging.basicConfig(level=logging.DEBUG)
@@ -20,6 +26,8 @@ class BDDService:
             self.query_api = self.client.query_api()
         except Exception as e:
             print(f"Erreur de connexion à InfluxDB 2.0': {e}")
+            
+    
             
     # Enregistrement des données de la batterie
     def save_battery_data(self, battery_data: BatteryData, timestamp):
@@ -96,6 +104,28 @@ class BDDService:
         logging.info("Données des satistiques sauvegardées avec succès")
         time.sleep(1)
         
+    # Enregistrement des données de status de la charge
+    def save_charging_status_data(self, charging_status_data: ChargingStatusData, timestamp):
+        point = Point("charging_status_data") \
+            .tag("device", "charging_status_data") \
+            .field("input_voltage_status", charging_status_data.input_voltage_status)\
+            .field("charging_mosfet_is_short_circuit", charging_status_data.charging_mosfet_is_short_circuit)\
+            .field("charging_or_anti_reverse_mosfet_is_open_circuit", charging_status_data.charging_or_anti_reverse_mosfet_is_open_circuit)\
+            .field("anti_reverse_mosfet_is_short_circuit", charging_status_data.anti_reverse_mosfet_is_short_circuit)\
+            .field("input_over_current", charging_status_data.input_over_current)\
+            .field("load_over_current", charging_status_data.load_over_current)\
+            .field("load_short_circuit", charging_status_data.load_short_circuit)\
+            .field("load_mosfet_short_circuit", charging_status_data.load_mosfet_short_circuit)\
+            .field("disequilibrium_in_three_circuits", charging_status_data.disequilibrium_in_three_circuits)\
+            .field("pv_input_short_circuit", charging_status_data.pv_input_short_circuit)\
+            .field("charging_status", charging_status_data.charging_status)\
+            .field("fault", charging_status_data.fault) \
+            .field("running", charging_status_data.running) \
+            .time(timestamp)
+        self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, record=point)
+        logging.info("Données des données de charge sauvegardées avec succès")
+        time.sleep(1)
+        
     # Enregistrement des paramètres de la batterie
     def save_battery_parameters(self, battery_parametres: BatteryParametresData, timestamp):
         point = Point("batterie_parametres") \
@@ -151,7 +181,7 @@ class BDDService:
 
             # Créer l'instance de BatteryParametresData avec les paramètres récupérés
             battery_params = BatteryParametresData(
-                rated_charging_current=params.get("rated_charging_current"),
+                rated_charging_current=int(params.get("rated_charging_current")),
                 rated_load_current=params.get("rated_load_current"),
                 real_rated_voltage=params.get("real_rated_voltage"),
                 battery_type=params.get("battery_type"),
@@ -183,3 +213,48 @@ class BDDService:
             print("Erreur lors de la récupération des paramètres de batterie :", e)
         # Si aucune donnée n'est trouvée ou en cas d'erreur
         return None
+    
+    def delete_measurement(self, measurement_name):
+        """
+        Supprime un measurement dans InfluxDB v2.x.
+
+        Args:
+        - measurement_name (str): Le nom du measurement à supprimer.
+        
+        Returns:
+        - Response (str): Message de la réponse de l'API InfluxDB.
+        """
+        # Construire l'URL pour l'API DELETE
+        url = f"{Authentification.INFLUXDB_URL}/api/v2/delete"
+
+        # Obtenir les timestamps au format RFC3339Nano
+        start_time = "1970-01-01T00:00:00Z"  # Date de début fixe
+        stop_time = datetime.now(timezone.utc).isoformat()  # Date actuelle au format RFC3339Nano
+
+        # Construire le corps de la requête
+        body = {
+            "predicate": f'_measurement="{measurement_name}"',
+            "start": start_time,
+            "stop": stop_time,
+        }
+
+        # Ajouter le token d'authentification dans les headers
+        headers = {
+            "Authorization": f"Token {Authentification.INFLUXDB_TOKEN}",
+            "Content-Type": "application/json",
+        }
+
+        # Ajouter les paramètres de l'URL
+        params = {
+            "org": Authentification.INFLUXDB_ORG,
+            "bucket": Authentification.INFLUXDB_BUCKET,
+        }
+
+        # Faire la requête DELETE
+        response = requests.post(url, headers=headers, params=params, data=json.dumps(body))
+
+        # Vérifier la réponse de la requête
+        if response.status_code == 204:
+            return f"Measurement '{measurement_name}' supprimé avec succès."
+        else:
+            return f"Erreur: {response.status_code} - {response.text}"

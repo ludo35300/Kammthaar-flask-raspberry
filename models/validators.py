@@ -27,7 +27,7 @@ class Validators:
             raise ValueError(f"{field_name} doit être une chaîne de caractères valide.")
         if not value.strip():
             raise ValueError(f"{field_name} ne doit pas être vide.")
-        return value
+        return str(value)
 
 
     def validate_boolean(value, field_name: str) -> bool:
@@ -56,7 +56,6 @@ class Validators:
         
     def validate_date(value, field_name):
         """Valide que la date est soit un objet datetime, soit une chaîne au format attendu."""
-        print(value)
         if isinstance(value, datetime):
             # Si c'est déjà un objet datetime, retourne-le
             return value

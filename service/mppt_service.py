@@ -3,17 +3,11 @@ from constantes.config import Config
 from epevermodbus.driver import EpeverChargeController
 from models.charging_status_entity import ChargingStatusData
 from models.controller_entity import ControllerData
-from service.bdd_service import BDDService
 
 class MPPTService:
     def __init__(self):
         # Connexion au MPPT Epever
         self.client = EpeverChargeController(Config.MODBUS_PORT, Config.MODBUS_SLAVE)
-        # Initialisation de la BDD InfluxDB
-        # Instanciation de BDDService
-        self.bdd_service = BDDService()
-
-        
         
     def read_controller_data(self):
         controller_load_voltage = self.client.get_load_voltage()
@@ -23,8 +17,6 @@ class MPPTService:
         controller_day_time = self.client.is_day()
         controller_night_time = self.client.is_night()
         controller_date = self.client.get_rtc()
-        print(controller_date)
-
         data_controller = ControllerData(controller_load_temperature, controller_load_amperage, controller_load_power, 
                                          controller_load_voltage, controller_day_time, controller_night_time, controller_date)
 
@@ -33,7 +25,6 @@ class MPPTService:
     def read_charging_status(self):
         # Appel à get_charging_equipment_status pour récupérer toutes les données
         charging_equipment_status_response = self.client.get_charging_equipment_status()
-        
         # Extraction des données du dictionnaire
         input_voltage_status = charging_equipment_status_response.get('input_voltage_status', 'UNKNOWN')
         charging_mosfet_is_short_circuit = charging_equipment_status_response.get('charging_mosfet_is_short_circuit', False)

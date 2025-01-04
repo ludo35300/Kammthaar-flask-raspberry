@@ -1,3 +1,4 @@
+from datetime import datetime
 from epevermodbus.driver import EpeverChargeController
 from constantes.config import Config
 from models.battery_parametres_entity import BatteryParametresData
@@ -11,6 +12,7 @@ class BatterieParametresService:
         self.bdd_service = BDDService()
 
     def read_battery_parametres_data(self, isConnected) -> BatteryParametresData:
+        
         rated_charging_current =  self.client.get_rated_charging_current()
         rated_load_current = self.client.get_rated_load_current()
         real_rated_voltage = self.client.get_battery_rated_voltage().replace("V", "").strip()
@@ -45,23 +47,29 @@ class BatterieParametresService:
                                                    battery_charge, charging_mode)
         
         if(isConnected): self.save_if_changed(battery_parametres)
+        # timestamp = datetime.now().isoformat()
+        # self.bdd_service.save_battery_parameters(battery_parametres, timestamp)
         return battery_parametres
     
+    
+    
+    
     def save_if_changed(self, new_params: BatteryParametresData):
-        # Récupérer les paramètres enregistrés dans la bdd
-        stored_params = self.bdd_service.get_battery_parameters()
-        # Si aucun paramètre n'est enregistré, sauvegarder directement les nouveaux
+        stored_params: BatteryParametresData = self.bdd_service.get_battery_parameters()
+        timestamp = datetime.now().isoformat()
+
         if stored_params is None:
-            self.bdd_service.save_battery_parameters(new_params)
+            print("Aucun paramètre trouvé. Enregistrement des nouveaux paramètres.")
+            self.bdd_service.save_battery_parameters(new_params, timestamp)
             return
-        # Vérifier s'il y a des différences
+
         has_changes = any(
-            getattr(stored_params, field) != getattr(new_params, field)
+            getattr(stored_params, field, None) != getattr(new_params, field, None)
             for field in vars(new_params)
         )
         if has_changes:
-            # Enregistrement des nouveaux paramètres dans InfluxDB s'il y a eu des changements
-            self.bdd_service.save_battery_parameters(new_params)
+            print("Changements détectés. Enregistrement des nouveaux paramètres.")
+            self.bdd_service.save_battery_parameters(new_params, timestamp)
 
     
 
