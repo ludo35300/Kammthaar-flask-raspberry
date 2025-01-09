@@ -11,8 +11,7 @@ class BatterieParametresService:
         # Instanciation de BDDService InfluxDB
         self.bdd_service = BDDService()
 
-    def read_battery_parametres_data(self, isConnected) -> BatteryParametresData:
-        
+    def read_battery_parametres_data(self) -> BatteryParametresData:
         rated_charging_current =  self.client.get_rated_charging_current()
         rated_load_current = self.client.get_rated_load_current()
         real_rated_voltage = self.client.get_battery_rated_voltage().replace("V", "").strip()
@@ -31,45 +30,27 @@ class BatterieParametresService:
         under_voltage_warning = self.client.get_under_voltage_warning_voltage()
         low_voltage_disconnect = self.client.get_low_voltage_disconnect_voltage()
         discharging_limit_voltage = self.client.get_discharging_limit_voltage()
-        battery_rated_voltage = self.client.get_battery_rated_voltage().replace("V", "").strip()
+        battery_rated_voltage = float(self.client.get_battery_rated_voltage().replace("V", ""))
         default_load_mode = self.client.get_default_load_on_off_in_manual_mode()
         equalize_duration = self.client.get_equalize_duration()
         boost_duration = self.client.get_boost_duration()
         battery_discharge = self.client.get_battery_discharge()
         battery_charge = self.client.get_battery_charge()
         charging_mode = self.client.get_charging_mode()
-
+        
         battery_parametres = BatteryParametresData(rated_charging_current, rated_load_current, real_rated_voltage, battery_type,
                                                    battery_capacity, temp_compensation_coefficient, over_voltage_disconnect, charging_limit_voltage,
                                                    over_voltage_reconnect, equalize_charging_voltage, boost_charging_voltage, float_charging_voltage,
                                                    boost_reconnect_voltage, low_voltage_reconnect, under_voltage_recover, under_voltage_warning, low_voltage_disconnect, 
                                                    discharging_limit_voltage, battery_rated_voltage, default_load_mode, equalize_duration, boost_duration, battery_discharge, 
                                                    battery_charge, charging_mode)
-        
-        if(isConnected): self.save_if_changed(battery_parametres)
-        # timestamp = datetime.now().isoformat()
-        # self.bdd_service.save_battery_parameters(battery_parametres, timestamp)
+
         return battery_parametres
     
     
     
     
-    def save_if_changed(self, new_params: BatteryParametresData):
-        stored_params: BatteryParametresData = self.bdd_service.get_battery_parameters()
-        timestamp = datetime.now().isoformat()
-
-        if stored_params is None:
-            print("Aucun paramètre trouvé. Enregistrement des nouveaux paramètres.")
-            self.bdd_service.save_battery_parameters(new_params, timestamp)
-            return
-
-        has_changes = any(
-            getattr(stored_params, field, None) != getattr(new_params, field, None)
-            for field in vars(new_params)
-        )
-        if has_changes:
-            print("Changements détectés. Enregistrement des nouveaux paramètres.")
-            self.bdd_service.save_battery_parameters(new_params, timestamp)
+    
 
     
 

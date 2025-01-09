@@ -59,7 +59,7 @@ class RecordService:
                 # Lecture des données
                 ps_data: PSData = self.ps_service.read_ps_data()
                 battery_data: BatteryData = self.batterie_service.read_battery_data()
-                battery_parametres: BatteryParametresData = self.batterie_parametres.read_battery_parametres_data(self.is_connected())
+                battery_parametres: BatteryParametresData = self.batterie_parametres.read_battery_parametres_data()
                 battery_status_data: BatteryStatusData = self.batterie_service.read_battery_status_data()
                 charging_status_data: ChargingStatusData = self.charging_status.read_charging_status_data()
                 discharging_status_data: DischargerStatusData = self.discharger_status.read_discharger_status_data()
@@ -138,7 +138,7 @@ class RecordService:
                     try:
                         timestamp = entry["timestamp"]
                         self.bdd_service.save_battery_data(BatteryData(**entry["data"]["battery_data"]), timestamp)
-                        self.bdd_service.save_battery_parameters(BatteryParametresData(**entry["data"]["battery_parametres"]), timestamp)
+                        self.bdd_service.save_battery_parameters(BatteryParametresData(**entry["data"]["battery_parametres"]), timestamp, self.is_connected())
                         self.bdd_service.save_battery_status_data(BatteryStatusData(**entry["data"]["battery_status_data"]), timestamp)
                         self.bdd_service.save_charging_status_data(ChargingStatusData(**entry["data"]["charging_status_data"]), timestamp)
                         self.bdd_service.save_discharging_status_data(DischargerStatusData(**entry["data"]["discharging_status_data"]), timestamp)

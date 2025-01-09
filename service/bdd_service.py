@@ -85,12 +85,12 @@ class BDDService:
     #  Enregistrement des données du controller MPPT
     def save_controller_data(self, controller_data: ControllerData, timestamp):
         fields = {
-            "voltage": controller_data.controller_load_voltage,
-            "amperage": controller_data.controller_load_amperage,
-            "power": controller_data.controller_load_power,
-            "temperature": controller_data.controller_temperature,
-            "day_time": controller_data.controller_day_time,
-            "night_time": controller_data.controller_night_time,
+            "voltage": controller_data.voltage,
+            "amperage": controller_data.amperage,
+            "power": controller_data.power,
+            "temperature": controller_data.temperature,
+            "day_time": controller_data.day_time,
+            "night_time": controller_data.night_time,
         }
         tags = {"device": "controller_data"}
         self.save_data("controller_data", tags, fields, timestamp)
@@ -156,7 +156,8 @@ class BDDService:
 
         
     # Enregistrement des paramètres de la batterie
-    def save_battery_parameters(self, battery_parametres: BatteryParametresData, timestamp):
+    def save_battery_parameters(self, battery_parametres: BatteryParametresData, timestamp, isConnected):
+        # Préparer les données pour les champs
         fields = {
             "rated_charging_current": battery_parametres.rated_charging_current,
             "rated_load_current": battery_parametres.rated_load_current,
@@ -176,7 +177,7 @@ class BDDService:
             "under_voltage_warning": battery_parametres.under_voltage_warning,
             "low_voltage_disconnect": battery_parametres.low_voltage_disconnect,
             "discharging_limit_voltage": battery_parametres.discharging_limit_voltage,
-            "battery_rated_voltage": battery_parametres.real_rated_voltage.replace("V", "").strip(),
+            "battery_rated_voltage": float(battery_parametres.real_rated_voltage.replace("V", "")),
             "default_load_mode": battery_parametres.default_load_mode,
             "equalize_duration": battery_parametres.equalize_duration,
             "boost_duration": battery_parametres.boost_duration,
@@ -184,14 +185,59 @@ class BDDService:
             "battery_charge": battery_parametres.battery_charge,
             "charging_mode": battery_parametres.charging_mode
         }
+
+        # Récupérer les derniers paramètres de la base de données
+        last_parameters = self.get_battery_parameters()
+        
+        # Comparer avec les paramètres actuels
+        if last_parameters:
+            # Convertir en dictionnaire pour comparaison
+            last_fields = {
+                "rated_charging_current": last_parameters.rated_charging_current,
+                "rated_load_current": last_parameters.rated_load_current,
+                "real_rated_voltage": last_parameters.real_rated_voltage,
+                "battery_type": last_parameters.battery_type,
+                "battery_capacity": last_parameters.battery_capacity,
+                "temp_compensation_coefficient": last_parameters.temp_compensation_coefficient,
+                "over_voltage_disconnect": last_parameters.over_voltage_disconnect,
+                "charging_limit_voltage": last_parameters.charging_limit_voltage,
+                "over_voltage_reconnect": last_parameters.over_voltage_reconnect,
+                "equalize_charging_voltage": last_parameters.equalize_charging_voltage,
+                "boost_charging_voltage": last_parameters.boost_charging_voltage,
+                "float_charging_voltage": last_parameters.float_charging_voltage,
+                "boost_reconnect_voltage": last_parameters.boost_reconnect_voltage,
+                "low_voltage_reconnect": last_parameters.low_voltage_reconnect,
+                "under_voltage_recover": last_parameters.under_voltage_recover,
+                "under_voltage_warning": last_parameters.under_voltage_warning,
+                "low_voltage_disconnect": last_parameters.low_voltage_disconnect,
+                "discharging_limit_voltage": last_parameters.discharging_limit_voltage,
+                "battery_rated_voltage": last_parameters.battery_rated_voltage,
+                "default_load_mode": last_parameters.default_load_mode,
+                "equalize_duration": last_parameters.equalize_duration,
+                "boost_duration": last_parameters.boost_duration,
+                "battery_discharge": last_parameters.battery_discharge,
+                "battery_charge": last_parameters.battery_charge,
+                "charging_mode": last_parameters.charging_mode
+            }
+
+            # Comparer les dictionnaires
+            if fields == last_fields:
+                logging.info(f"Les paramètres de la batterie sont identiques. Aucun enregistrement nécessaire.")
+                return
+
+        # Enregistrer les nouveaux paramètres s'ils sont différents
+        logging.info(f"Enregistrement des nouveaux paramètres de la batterie.")
         tags = {"device": "batterie_parametres"}
+        print(fields)
         self.save_data("batterie_parametres", tags, fields, timestamp)
+        
+   
 
     # Récupération des paramètres de la batterie dans la base de données
     def get_battery_parameters(self):
         query = f'''
         from(bucket: "{Authentification.INFLUXDB_BUCKET}")
-        |> range(start: -1d)   // Durée de recherche
+        |> range(start: -10d)   // Durée de recherche
         |> filter(fn: (r) => r._measurement == "batterie_parametres")
         |> last()              // Dernier enregistrement
         '''
@@ -200,48 +246,53 @@ class BDDService:
             # On initialise un dictionnaire pour stocker les valeurs de paramètres
             params = {}
 
-            # On parcourt tous les enregistrements
+            # Parcours des enregistrements retournés par InfluxDB
             for table in result:
                 for record in table.records:
                     field = record.get_field()
                     value = record.get_value()
-                    params[field] = value
+                    if value is not None:  # Ne prendre que les valeurs non nulles
+                        params[field] = value
 
-            # Créer l'instance de BatteryParametresData avec les paramètres récupérés
+            # Validation des données récupérées pour éviter les erreurs
+            def get_param(key, default=None):
+                return params.get(key, default)
+
+            # Construction de l'instance BatteryParametresData avec des valeurs par défaut en cas de données manquantes
             battery_params = BatteryParametresData(
-                rated_charging_current=int(params.get("rated_charging_current")),
-                rated_load_current=params.get("rated_load_current"),
-                real_rated_voltage=params.get("real_rated_voltage"),
-                battery_type=params.get("battery_type"),
-                battery_capacity=params.get("battery_capacity"),
-                temp_compensation_coefficient=params.get("temp_compensation_coefficient"),
-                over_voltage_disconnect=params.get("over_voltage_disconnect"),
-                charging_limit_voltage=params.get("charging_limit_voltage"),
-                over_voltage_reconnect=params.get("over_voltage_reconnect"),
-                equalize_charging_voltage=params.get("equalize_charging_voltage"),
-                boost_charging_voltage=params.get("boost_charging_voltage"),
-                float_charging_voltage=params.get("float_charging_voltage"),
-                boost_reconnect_voltage=params.get("boost_reconnect_voltage"),
-                low_voltage_reconnect=params.get("low_voltage_reconnect"),
-                under_voltage_recover=params.get("under_voltage_recover"),
-                under_voltage_warning=params.get("under_voltage_warning"),
-                low_voltage_disconnect=params.get("low_voltage_disconnect"),
-                discharging_limit_voltage=params.get("discharging_limit_voltage"),
-                battery_rated_voltage=params.get("battery_rated_voltage"),
-                default_load_mode=params.get("default_load_mode"),
-                equalize_duration=params.get("equalize_duration"),
-                boost_duration=params.get("boost_duration"),
-                battery_discharge=params.get("battery_discharge"),
-                battery_charge=params.get("battery_charge"),
-                charging_mode=params.get("charging_mode")
+                rated_charging_current=int(get_param("rated_charging_current", 0)),
+                rated_load_current=get_param("rated_load_current", 0),
+                real_rated_voltage=get_param("real_rated_voltage", "0"),
+                battery_type=get_param("battery_type", "unknown"),
+                battery_capacity=get_param("battery_capacity", 0),
+                temp_compensation_coefficient=get_param("temp_compensation_coefficient", 0.0),
+                over_voltage_disconnect=get_param("over_voltage_disconnect", 0.0),
+                charging_limit_voltage=get_param("charging_limit_voltage", 0.0),
+                over_voltage_reconnect=get_param("over_voltage_reconnect", 0.0),
+                equalize_charging_voltage=get_param("equalize_charging_voltage", 0.0),
+                boost_charging_voltage=get_param("boost_charging_voltage", 0.0),
+                float_charging_voltage=get_param("float_charging_voltage", 0.0),
+                boost_reconnect_voltage=get_param("boost_reconnect_voltage", 0.0),
+                low_voltage_reconnect=get_param("low_voltage_reconnect", 0.0),
+                under_voltage_recover=get_param("under_voltage_recover", 0.0),
+                under_voltage_warning=get_param("under_voltage_warning", 0.0),
+                low_voltage_disconnect=get_param("low_voltage_disconnect", 0.0),
+                discharging_limit_voltage=get_param("discharging_limit_voltage", 0.0),
+                battery_rated_voltage=get_param("battery_rated_voltage", 0.0),
+                default_load_mode=get_param("default_load_mode", "default"),
+                equalize_duration=get_param("equalize_duration", 0),
+                boost_duration=get_param("boost_duration", 0),
+                battery_discharge=get_param("battery_discharge", 0.0),
+                battery_charge=get_param("battery_charge", 0.0),
+                charging_mode=get_param("charging_mode", "unknown")
             )
             return battery_params
 
         except Exception as e:
             print("Erreur lors de la récupération des paramètres de batterie :", e)
-        # Si aucune donnée n'est trouvée ou en cas d'erreur
-        return None
-    
+            # Si aucune donnée n'est trouvée ou en cas d'erreur, retourner None
+            return None
+
     def delete_measurement(self, measurement_name):
         """
         Supprime un measurement dans InfluxDB v2.x.

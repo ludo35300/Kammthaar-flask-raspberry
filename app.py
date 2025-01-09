@@ -14,6 +14,7 @@ from controller.discharging_status_controller import discharging_status_controll
 from controller.mppt_controller import mppt_controller
 from controller.statistiques_controller import statistiques_controller
 from controller.serveur_controleur import serveur_controller
+from service.bdd_service import BDDService
 from service.record_service import RecordService
 
 

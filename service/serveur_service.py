@@ -3,8 +3,6 @@ import psutil
 
 
 class ServeurService:
-    def status(self):
-        return jsonify({"message": "Kammthaar est en ligne"}), 200
     
     def get_system_info(self):
     # Collecte des données

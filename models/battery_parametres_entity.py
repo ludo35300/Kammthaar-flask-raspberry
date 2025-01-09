@@ -49,7 +49,7 @@ class BatteryParametresData:
         self.under_voltage_warning = Validators.validate_float(self.under_voltage_warning, "under_voltage_warning")
         self.low_voltage_disconnect = Validators.validate_float(self.low_voltage_disconnect, "low_voltage_disconnect")
         self.discharging_limit_voltage = Validators.validate_float(self.discharging_limit_voltage, "discharging_limit_voltage")
-        self.battery_rated_voltage = Validators.validate_string(self.battery_rated_voltage, "battery_rated_voltage")
+        self.battery_rated_voltage = Validators.validate_float(self.battery_rated_voltage, "battery_rated_voltage")
         self.default_load_mode = Validators.validate_string(self.default_load_mode, "default_load_mode")
         self.equalize_duration = Validators.validate_int(self.equalize_duration, "equalize_duration")
         self.boost_duration = Validators.validate_int(self.boost_duration, "boost_duration")
