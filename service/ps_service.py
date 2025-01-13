@@ -11,8 +11,8 @@ class PSService:
         self.bdd_service = BDDService()
         
     def read_ps_data(self):
-        ps_voltage = int(self.client.get_solar_voltage())
-        ps_amperage = round(self.client.get_solar_current(), 1)
-        ps_power = round(self.client.get_solar_power(), 1)
-        data_ps = PSData(ps_voltage, ps_amperage, ps_power)
+        voltage = int(self.client.get_solar_voltage())
+        amperage = round(self.client.get_solar_current(), 1)
+        power = round(self.client.get_solar_power(), 1)
+        data_ps = PSData(voltage, amperage, power)
         return data_ps

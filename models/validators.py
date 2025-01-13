@@ -1,5 +1,5 @@
 
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 class Validators:
     
@@ -36,14 +36,31 @@ class Validators:
             raise ValueError(f"{field_name} doit être un booléen (True ou False).")
         return value
 
-    def validate_date(value: str, field_name: str) -> str:
-        """Valide que la valeur est une date valide dans le format YYYY-MM-DD."""
-        try:
-            # Essayer de convertir la chaîne en objet datetime
-            datetime.strptime(value, '%Y-%m-%d')
-        except ValueError:
-            raise ValueError(f"{field_name} doit être une date valide au format YYYY-MM-DD.")
-        return value
+    def validate_date(value, field_name: str) -> str:
+        """
+        Valide que la valeur est un objet datetime ou une chaîne au format attendu,
+        et la retourne sous le format : 'YYYY-MM-DD HH:mm:ss.SSSSSS+00:00'.
+        """
+        if isinstance(value, datetime):
+            # Si la valeur est déjà un datetime, forcer son fuseau horaire à UTC.
+            value_datetime = value.astimezone(timezone.utc) - timedelta(hours=1)
+        else:
+            try:
+                # Si la valeur est une chaîne ISO 8601 valide.
+                value_datetime = datetime.fromisoformat(value)
+            except ValueError:
+                try:
+                    # Sinon, essaie un format personnalisé.
+                    value_datetime = datetime.strptime(value, "%Y-%m-%d %H:%M:%S.%f%z")
+                except ValueError:
+                    raise ValueError(f"{field_name} doit être une date valide.")
+
+            # Si la date n'a pas de fuseau horaire, ajoutez UTC.
+            # Ajuster à UTC-1.
+            value_datetime -= timedelta(hours=1)
+
+        # Retourne la date formatée comme demandé.
+        return value_datetime.strftime("%Y-%m-%d %H:%M:%S.%f%z").replace("+0000", "+00:00")
 
     def validate_int(value, field_name: str) -> int:
         """Valide que la valeur est un entier ou peut être convertie en entier."""
@@ -54,16 +71,3 @@ class Validators:
         except (TypeError, ValueError):
             raise ValueError(f"{field_name} doit être un entier valide.")
         
-    def validate_date(value, field_name):
-        """Valide que la date est soit un objet datetime, soit une chaîne au format attendu."""
-        if isinstance(value, datetime):
-            # Si c'est déjà un objet datetime, retourne-le
-            return value
-        elif isinstance(value, str):
-            try:
-                # Tente de convertir la chaîne en objet datetime
-                return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S")
-            except ValueError:
-                raise ValueError(f"{field_name} doit être une chaîne de caractères au format %Y-%m-%d %H:%M:%S.")
-        else:
-            raise TypeError(f"{field_name} doit être un objet datetime ou une chaîne au format %Y-%m-%d %H:%M:%S.")

@@ -25,5 +25,4 @@ class ControllerData:
     def to_dict(self):
         """Convertit l'objet en dictionnaire pour une sérialisation JSON."""
         data_dict = asdict(self)
-        data_dict["date"] = data_dict["date"].isoformat()
         return data_dict

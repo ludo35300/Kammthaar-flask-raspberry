@@ -75,9 +75,9 @@ class BDDService:
     # Enregistrement des données du panneau solaire
     def save_ps_data(self, ps_data: PSData, timestamp):
         fields = {
-            "voltage": ps_data.ps_voltage,
-            "amperage": ps_data.ps_amperage,
-            "power": ps_data.ps_power
+            "voltage": ps_data.voltage,
+            "amperage": ps_data.amperage,
+            "power": ps_data.power
         }
         tags = {"device": "solar_panel"}
         self.save_data("ps_data", tags, fields, timestamp)
@@ -186,49 +186,7 @@ class BDDService:
             "charging_mode": battery_parametres.charging_mode
         }
 
-        # Récupérer les derniers paramètres de la base de données
-        last_parameters = self.get_battery_parameters()
-        
-        # Comparer avec les paramètres actuels
-        if last_parameters:
-            # Convertir en dictionnaire pour comparaison
-            last_fields = {
-                "rated_charging_current": last_parameters.rated_charging_current,
-                "rated_load_current": last_parameters.rated_load_current,
-                "real_rated_voltage": last_parameters.real_rated_voltage,
-                "battery_type": last_parameters.battery_type,
-                "battery_capacity": last_parameters.battery_capacity,
-                "temp_compensation_coefficient": last_parameters.temp_compensation_coefficient,
-                "over_voltage_disconnect": last_parameters.over_voltage_disconnect,
-                "charging_limit_voltage": last_parameters.charging_limit_voltage,
-                "over_voltage_reconnect": last_parameters.over_voltage_reconnect,
-                "equalize_charging_voltage": last_parameters.equalize_charging_voltage,
-                "boost_charging_voltage": last_parameters.boost_charging_voltage,
-                "float_charging_voltage": last_parameters.float_charging_voltage,
-                "boost_reconnect_voltage": last_parameters.boost_reconnect_voltage,
-                "low_voltage_reconnect": last_parameters.low_voltage_reconnect,
-                "under_voltage_recover": last_parameters.under_voltage_recover,
-                "under_voltage_warning": last_parameters.under_voltage_warning,
-                "low_voltage_disconnect": last_parameters.low_voltage_disconnect,
-                "discharging_limit_voltage": last_parameters.discharging_limit_voltage,
-                "battery_rated_voltage": last_parameters.battery_rated_voltage,
-                "default_load_mode": last_parameters.default_load_mode,
-                "equalize_duration": last_parameters.equalize_duration,
-                "boost_duration": last_parameters.boost_duration,
-                "battery_discharge": last_parameters.battery_discharge,
-                "battery_charge": last_parameters.battery_charge,
-                "charging_mode": last_parameters.charging_mode
-            }
-
-            # Comparer les dictionnaires
-            if fields == last_fields:
-                logging.info(f"Les paramètres de la batterie sont identiques. Aucun enregistrement nécessaire.")
-                return
-
-        # Enregistrer les nouveaux paramètres s'ils sont différents
-        logging.info(f"Enregistrement des nouveaux paramètres de la batterie.")
         tags = {"device": "batterie_parametres"}
-        print(fields)
         self.save_data("batterie_parametres", tags, fields, timestamp)
         
    
