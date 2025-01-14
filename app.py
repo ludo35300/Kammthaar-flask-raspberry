@@ -1,3 +1,4 @@
+import logging
 from flask import Flask
 from flask_cors import CORS
 from flask_smorest import Api
@@ -5,20 +6,14 @@ from flask_jwt_extended import JWTManager
 
 from constantes.authentification import Authentification
 from controller.authentification_controller import authentification_controller
-from controller.batterie_parametres_controller import batterie_parametres_controller
-from controller.ps_controller import ps_controller
-from controller.battery_controller import batterie_controller
-from controller.battery_status_controller import batterie_status_controller
-from controller.charging_status_controller import charging_status_controller
-from controller.discharging_status_controller import discharging_status_controller
-from controller.mppt_controller import mppt_controller
-from controller.statistiques_controller import statistiques_controller
+from controller import batteryStatus_controller, chargingEquipmentStatus_controller, controllerData_controller, dailyStatistics_controller, dischargingEquipmentStatus_controller, energyStatistics_controller, loadData_controller, solarData_controller
 from controller.serveur_controleur import serveur_controller
-from service.bdd_service import BDDService
+
 from service.record_service import RecordService
 
 
 def create_app():
+    # logging.basicConfig(level=logging.DEBUG, encoding='utf-8')
     """
     Crée et configure l'application API Flask.
     
@@ -35,7 +30,7 @@ def create_app():
     
     app.debug = True # Dev
     # Configuration CORS
-    CORS(app, origins=["http://localhost:4200", "https://api.kammthaar.fr", "https://app.kammthaar.fr", "*"])
+    CORS(app, origins=["https://api.kammthaar.fr", "*"])
     
     # Configuration de la documentation API avec Flask-Smorest
     app.config["API_TITLE"] = "Gestion des Données MPPT"
@@ -53,14 +48,16 @@ def create_app():
     api = Api(app)
 
     # Enregistrement des blueprints
-    api.register_blueprint(mppt_controller)
-    api.register_blueprint(ps_controller)
-    api.register_blueprint(batterie_controller)
-    api.register_blueprint(batterie_status_controller)
-    api.register_blueprint(charging_status_controller)
-    api.register_blueprint(discharging_status_controller)
-    api.register_blueprint(statistiques_controller)
-    api.register_blueprint(batterie_parametres_controller)
+    api.register_blueprint(batteryStatus_controller.blp_domaine_externe)
+    api.register_blueprint(chargingEquipmentStatus_controller.blp_domaine_externe)
+    api.register_blueprint(controllerData_controller.blp_domaine_externe)
+    api.register_blueprint(dailyStatistics_controller.blp_domaine_externe)
+    api.register_blueprint(dischargingEquipmentStatus_controller.blp_domaine_externe)
+    api.register_blueprint(energyStatistics_controller.blp_domaine_externe)
+    api.register_blueprint(loadData_controller.blp_domaine_externe)
+    api.register_blueprint(solarData_controller.blp_domaine_externe)
+    
+    
     api.register_blueprint(serveur_controller)
     api.register_blueprint(authentification_controller)
     
