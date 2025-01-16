@@ -3,7 +3,6 @@ import psutil
 
 
 class ServeurService:
-    
     def get_system_info(self):
     # Collecte des données
         cpu_usage = psutil.cpu_percent(interval=1)
@@ -12,7 +11,7 @@ class ServeurService:
         temperatures = psutil.sensors_temperatures()
         # Gestion des températures du CPU
         if 'cpu_thermal' in temperatures:
-            temperature = temperatures['cpu_thermal'][0].current  # Utilise la propriété `.current`
+            temperature = temperatures['cpu_thermal'][0].current
         else:
             temperature = 'N/A'  # Valeur par défaut si 'cpu_thermal' n'existe pas
 
