@@ -18,22 +18,26 @@ class ControllerDataService:
     
     def read_controller_data(self) -> ControllerData:
         """
-        Récupère les données de status de la batterie en temps réel.
+        Récupère les données du contrôleur en temps réel.
         """
-        # Récupération des données et création d'une instance de ControllerData
-        controller_data = ControllerData(
-            temperature = self.client.get_controller_temperature(),
-            device_over_temperature = self.client.is_device_over_temperature(),
-            current_device_time = self.client.get_rtc()
-        )
-        # Validation des données via le schéma Marshmallow
         try:
-            controller_data = controller_data.to_dict()
-            ControllerDataSchema().load(controller_data)  # Validation stricte des données
+            # Récupération des données brutes
+            data = {
+                "temperature": self.client.get_controller_temperature(),
+                "device_over_temperature": self.client.is_device_over_temperature(),
+                "current_device_time": str(self.client.get_rtc()),
+            }
+            # Validation des données via le schéma Marshmallow
+            valid_data = ControllerDataSchema().load(data)
+            # Création d'une instance de ControllerData avec les données validées
+            controller_data = ControllerData(**valid_data)
+            return controller_data
+
         except ValidationError as e:
-            return abort(400, message=f"Erreur de validation des données du controller : {e.messages}")
+            logging.error(f"Erreur de validation des données : {e.messages}")
+            abort(400, message=f"Erreur de validation des données du contrôleur : {e.messages}")
+
         except Exception as e:
-            logging.error(f"Erreur interne:", str(e))
-            return abort(500, message="Erreur interne du serveur.")
-        return controller_data
+            logging.error(f"Erreur interne : {str(e)}")
+            abort(500, message="Erreur interne du serveur.")
  

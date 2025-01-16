@@ -13,6 +13,14 @@ from service.energyStatistics_service import EnergyStatisticsService
 from service.loadData_service import LoadDataService
 from service.solarData_service import SolarDataService
 
+from dto.batteryStatus_schema import BatteryStatusSchema
+from dto.chargingEquipmentStatus_schema import ChargingEquipmentStatusSchema
+from dto.controllerData_schema import ControllerDataSchema
+from dto.dailyStatistics_schema import DailyStatisticsSchema
+from dto.dischargingEquipmentStatus_schema import DischargingEquipmentStatusSchema
+from dto.energyStatistics_schema import EnergyStatisticsSchema
+from dto.loadData_schema import LoadDataSchema
+from dto.solarData_schema import SolarDataSchema
 
 class RecordService:
     def __init__(self):
@@ -53,14 +61,14 @@ class RecordService:
                 new_data = {
                     "timestamp": datetime.now().isoformat(),
                     "data": {
-                        "batteryStatus": self.batteryStatus_service.read_battery_status_data(),
-                        "chargingEquipmentStatus": self.chargingEquipmentStatus_service.read_charging_equipment_status_data(),
-                        "controllerData": self.controllerData_service.read_controller_data(),
-                        "dailyStatistics": self.dailyStatistics_service.read_daily_statistics_data(),
-                        "dischargingEquipmentStatus": self.dischargingEquipmentStatus_service.read_discharging_equipment_status_data(),
-                        "energyStatistics": self.energyStatistics_service.read_energy_statistics_data(),
-                        "loadData": self.loadData_service.read_load_data(),
-                        "solarData": self.solarData_service.read_solar_data()
+                        "batteryStatus": self.batteryStatus_service.read_battery_status_data().to_dict(),
+                        "chargingEquipmentStatus": self.chargingEquipmentStatus_service.read_charging_equipment_status_data().to_dict(),
+                        "controllerData": self.controllerData_service.read_controller_data().to_dict(),
+                        "dailyStatistics": self.dailyStatistics_service.read_daily_statistics_data().to_dict(),
+                        "dischargingEquipmentStatus": self.dischargingEquipmentStatus_service.read_discharging_equipment_status_data().to_dict(),
+                        "energyStatistics": self.energyStatistics_service.read_energy_statistics_data().to_dict(),
+                        "loadData": self.loadData_service.read_load_data().to_dict(),
+                        "solarData": self.solarData_service.read_solar_data().to_dict()
                     },
                 }
                 # Sauvegarde locale des données
@@ -111,31 +119,31 @@ class RecordService:
                 with open(Config.LOCAL_STORAGE_PATH, "r") as f:
                     local_data = json.load(f)
                 for entry in local_data:
-                    timestamp = entry["timestamp"]
-                    categories = entry["data"]
-                    for measurement, content in categories.items():
-                        # Préparer les tags et les champs
-                        tags = {"device": measurement}
-                        fields = {}
-                        # Parcourir les sous-clés pour structurer les champs et éviter les sous-dictionnaires
-                        for key, value in content.items():
-                            if isinstance(value, dict):
-                                # Si le champ contient des sous-champs (e.g., "status"), on aplatit
-                                for sub_key, sub_value in value.items():
-                                    field_name = f"{key}_{sub_key}"  # Exemple : "status_battery_status"
-                                    fields[field_name] = sub_value
-                            else:
-                                fields[key] = value
-                        # Sauvegarder dans InfluxDB
-                        try:
-                            self.bdd_service.save_data(
-                                measurement_name=measurement,
-                                tags=tags,
-                                fields=fields,
-                                timestamp=timestamp
-                            )
-                        except Exception as e:
-                            logging.error(f"Erreur lors de la sauvegarde de {measurement}: {e}")
+                    try:
+                        # transformation du timestamp pour InfluxDB
+                        timestamp_obj = datetime.fromisoformat(entry["timestamp"])
+                        timestamp = int(timestamp_obj.timestamp() * 1e9)
+                        
+                        batteryStatus = BatteryStatusSchema().load(entry["data"]["batteryStatus"])
+                        self.bdd_service.save_battery_status(batteryStatus, timestamp)
+                        chargingEquipmentStatus = ChargingEquipmentStatusSchema().load(entry["data"]["chargingEquipmentStatus"])
+                        self.bdd_service.save_charging_equipment_status(chargingEquipmentStatus, timestamp)
+                        controllerData = ControllerDataSchema().load(entry["data"]["controllerData"])
+                        self.bdd_service.save_controller_data(controllerData, timestamp)
+                        dailyStatistics = DailyStatisticsSchema().load(entry["data"]["dailyStatistics"])
+                        self.bdd_service.save_daily_statistics(dailyStatistics, timestamp)
+                        dischargingEquipmentStatus = DischargingEquipmentStatusSchema().load(entry["data"]["dischargingEquipmentStatus"])
+                        self.bdd_service.save_discharging_equipment_status(dischargingEquipmentStatus, timestamp)
+                        energyStatistics = EnergyStatisticsSchema().load(entry["data"]["energyStatistics"])
+                        self.bdd_service.save_energy_statistics(energyStatistics, timestamp)
+                        loadData = LoadDataSchema().load(entry["data"]["loadData"])
+                        self.bdd_service.save_load_data(loadData, timestamp)
+                        solarData = SolarDataSchema().load(entry["data"]["solarData"])
+                        self.bdd_service.save_solar_data(solarData, timestamp)
+                        
+                    except Exception as e:
+                        logging.error(f"Erreur lors de la sauvegarde d'une entrée': {e}")
+                        traceback.print_exc()
                 # Vider le fichier après synchronisation
                 open(Config.LOCAL_STORAGE_PATH, "w").close()
                 logging.info(f"Données locales synchronisées et fichier local vidé.")

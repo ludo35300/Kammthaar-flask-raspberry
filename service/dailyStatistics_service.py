@@ -19,25 +19,28 @@ class DailyStatisticsService:
     
     def read_daily_statistics_data(self) -> DailyStatistics:
         """
-        Récupère les données de statistiques de la journée en temps réel.
+        Récupère les données de statistiques journalières en temps réel.
         """
-        
-        
-        # Récupération des données et création d'une instance de DailyStatistics
-        daily_statistics_data = DailyStatistics(
-            maximum_battery_voltage_today = self.client.get_maximum_battery_voltage_today(),
-            minimum_battery_voltage_today = self.client.get_minimum_battery_voltage_today(),
-            day_time = self.client.is_day(),
-            night_time = self.client.is_night()
-        )
-        # Validation des données via le schéma Marshmallow
         try:
-            daily_statistics_data = daily_statistics_data.to_dict()
-            DailyStatisticsSchema().load(daily_statistics_data)  # Validation stricte des données
+            # Récupération des données brutes
+            data = {
+                "maximum_battery_voltage_today": self.client.get_maximum_battery_voltage_today(),
+                "minimum_battery_voltage_today": self.client.get_minimum_battery_voltage_today(),
+                "day_time": self.client.is_day(),
+                "night_time": self.client.is_night(),
+            }
+            # Validation des données via le schéma Marshmallow
+            valid_data = DailyStatisticsSchema().load(data)
+
+            # Création d'une instance de DailyStatistics avec les données validées
+            daily_statistics_data = DailyStatistics(**valid_data)
+            return daily_statistics_data
+
         except ValidationError as e:
-            return abort(400, message=f"Erreur de validation des statistiques journalier : {e.messages}")
+            logging.error(f"Erreur de validation des données : {e.messages}")
+            abort(400, message=f"Erreur de validation des statistiques journalières : {e.messages}")
+
         except Exception as e:
-            logging.error(f"Erreur interne:", str(e))
-            return abort(500, message="Erreur interne du serveur.")
-        return daily_statistics_data
+            logging.error(f"Erreur interne : {str(e)}")
+            abort(500, message="Erreur interne du serveur.")
  

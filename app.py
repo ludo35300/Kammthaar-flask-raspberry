@@ -13,7 +13,7 @@ from service.record_service import RecordService
 
 
 def create_app():
-    # logging.basicConfig(level=logging.DEBUG, encoding='utf-8')
+    logging.basicConfig(level=logging.DEBUG, encoding='utf-8')
     """
     Crée et configure l'application API Flask.
     

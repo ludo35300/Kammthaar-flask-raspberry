@@ -19,24 +19,30 @@ class SolarDataService:
     
     def read_solar_data(self) -> SolarData:
         """
-        Récupère les données des panneaux solaire en temps réel.
+        Récupère les données des panneaux solaires en temps réel.
         """
-        # Récupération des données et création d'une instance de SolarData
-        solar_data = SolarData(
-            voltage = self.client.get_solar_voltage(),
-            current = self.client.get_solar_current(),
-            power = self.client.get_load_power(),
-            maximum_voltage_today = self.client.get_maximum_pv_voltage_today(),
-            minimum_voltage_today = self.client.get_minimum_pv_voltage_today(),
-        )
-        # Validation des données via le schéma Marshmallow
         try:
-            solar_data = solar_data.to_dict()
-            SolarDataSchema().load(solar_data)  # Validation stricte des données
+            # Récupération des données brutes
+            raw_data = {
+                "voltage": self.client.get_solar_voltage(),
+                "current": self.client.get_solar_current(),
+                "power": self.client.get_solar_power(),
+                "maximum_voltage_today": self.client.get_maximum_pv_voltage_today(),
+                "minimum_voltage_today": self.client.get_minimum_pv_voltage_today()
+            }
+
+            # Validation des données via le schéma Marshmallow
+            valid_data = SolarDataSchema().load(raw_data)
+
+            # Création d'une instance de SolarData avec les données validées
+            solar_data = SolarData(**valid_data)
+            return solar_data
+
         except ValidationError as e:
-            return abort(400, message=f"Erreur de validation des données de charge : {e.messages}")
+            logging.error(f"Erreur de validation des données : {e.messages}")
+            abort(400, message=f"Erreur de validation des données solaires : {e.messages}")
+
         except Exception as e:
-            logging.error("Erreur interne:", str(e))
-            return abort(500, message="Erreur interne du serveur.")
-        return solar_data
+            logging.error(f"Erreur interne : {str(e)}")
+            abort(500, message="Erreur interne du serveur.")
  

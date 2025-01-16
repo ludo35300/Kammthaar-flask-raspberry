@@ -19,34 +19,39 @@ class ChargingEquipmentStatusService:
     
     def read_charging_equipment_status_data(self) -> ChargingEquipmentStatus:
         """
-        Récupère les données de status de la batterie en temps réel.
+        Récupère les données du status de la charge en temps réel.
         """
-        # Récupération des données et création d'une instance de ChargingEquipmentStatus
-        charging_status = ChargingEquipmentStatus(
-            input_voltage_status = self.client.get_charging_equipment_status()["input_voltage_status"],
-            charging_status = self.client.get_charging_equipment_status()["charging_status"],
-            running = self.client.get_charging_equipment_status()["running"],
-            errors = dict(
-                charging_mosfet_short_circuit = self.client.get_charging_equipment_status()["charging_mosfet_is_short_circuit"],
-                charging_or_anti_reverse_mosfet_open_circuit = self.client.get_charging_equipment_status()["charging_or_anti_reverse_mosfet_is_open_circuit"],
-                anti_reverse_mosfet_short_circuit = self.client.get_charging_equipment_status()["anti_reverse_mosfet_is_short_circuit"],
-                input_over_current = self.client.get_charging_equipment_status()["input_over_current"],
-                load_over_current = self.client.get_charging_equipment_status()["load_over_current"],
-                load_short_circuit = self.client.get_charging_equipment_status()["load_short_circuit"],
-                load_mosfet_short_circuit = self.client.get_charging_equipment_status()["load_mosfet_short_circuit"],
-                disequilibrium_in_three_circuits = self.client.get_charging_equipment_status()["disequilibrium_in_three_circuits"],
-                pv_input_short_circuit = self.client.get_charging_equipment_status()["pv_input_short_circuit"],
-                fault = self.client.get_charging_equipment_status()["fault"]
-            )
-        )
-        # Validation des données via le schéma Marshmallow
         try:
-            charging_status = charging_status.to_dict()
-            ChargingEquipmentStatusSchema().load(charging_status)  # Validation stricte des données
+            # Récupération des données brutes
+            data = {
+                "input_voltage_status": self.client.get_charging_equipment_status()["input_voltage_status"],
+                "charging_status": self.client.get_charging_equipment_status()["charging_status"],
+                "running": self.client.get_charging_equipment_status()["running"],
+                "errors": {
+                    "charging_mosfet_short_circuit": self.client.get_charging_equipment_status()["charging_mosfet_is_short_circuit"],
+                    "charging_or_anti_reverse_mosfet_open_circuit": self.client.get_charging_equipment_status()["charging_or_anti_reverse_mosfet_is_open_circuit"],
+                    "anti_reverse_mosfet_short_circuit": self.client.get_charging_equipment_status()["anti_reverse_mosfet_is_short_circuit"],
+                    "input_over_current": self.client.get_charging_equipment_status()["input_over_current"],
+                    "load_over_current": self.client.get_charging_equipment_status()["load_over_current"],
+                    "load_short_circuit": self.client.get_charging_equipment_status()["load_short_circuit"],
+                    "load_mosfet_short_circuit": self.client.get_charging_equipment_status()["load_mosfet_short_circuit"],
+                    "disequilibrium_in_three_circuits": self.client.get_charging_equipment_status()["disequilibrium_in_three_circuits"],
+                    "pv_input_short_circuit": self.client.get_charging_equipment_status()["pv_input_short_circuit"],
+                    "fault": self.client.get_charging_equipment_status()["fault"],
+                },
+            }
+
+            # Validation des données via le schéma Marshmallow
+            valid_data = ChargingEquipmentStatusSchema().load(data)
+
+            # Création d'une instance de ChargingEquipmentStatus avec les données validées
+            charging_status = ChargingEquipmentStatus(**valid_data)
+            return charging_status
+
         except ValidationError as e:
-            return abort(400, message=f"Erreur de validation des données de charge : {e.messages}")
+            logging.error(f"Erreur de validation des données : {e.messages}")
+            abort(400, message=f"Erreur de validation des données de charge : {e.messages}")
+
         except Exception as e:
-            logging.error(f"Erreur interne:", str(e))
-            return abort(500, message="Erreur interne du serveur.")
-        return charging_status
- 
+            logging.error(f"Erreur interne : {str(e)}")
+            abort(500, message="Erreur interne du serveur.")

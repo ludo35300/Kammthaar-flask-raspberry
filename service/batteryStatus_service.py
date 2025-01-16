@@ -20,24 +20,25 @@ class BatterieStatusService:
         """
         Récupère les données de status de la batterie en temps réel.
         """
-        # Récupération des données et création d'une instance de BatteryStatus
-        battery_status = BatteryStatus(
-            voltage = self.client.get_battery_voltage(),
-            current = self.client.get_battery_current(),
-            power = self.client.get_battery_power(),
-            state_of_charge = self.client.get_battery_state_of_charge(),
-            temperature = self.client.get_battery_temperature(),
-            # remote_temperature= self.client.get_remote_battery_temperature(),
-            status=self.client.get_battery_status()  # Statut détaillé de la batterie
-        )
-        # Validation des données via le schéma Marshmallow
         try:
-            battery_status = battery_status.to_dict()
-            BatteryStatusSchema().load(battery_status)  # Validation stricte des données
+            data = {
+                "voltage": self.client.get_battery_voltage(),
+                "current": self.client.get_battery_current(),
+                "power": self.client.get_battery_power(),
+                "state_of_charge": self.client.get_battery_state_of_charge(),
+                "temperature": self.client.get_battery_temperature(),
+                # "remote_temperature": self.client.get_remote_battery_temperature(),
+                "status": self.client.get_battery_status(),
+            }
+            valid_data = BatteryStatusSchema().load(data)   # Validation des données via le schéma Marshmallow
+            battery_status = BatteryStatus(**valid_data)    # Création d'une instance de BatteryStatus avec les données validées
+            return battery_status
+
         except ValidationError as e:
-            return abort(400, message=f"Erreur de validation des données d'état de la batterie : {e.messages}")
+            logging.error(f"Erreur de validation des données : {e.messages}")
+            abort(400, message=f"Erreur de validation des données d'état de la batterie : {e.messages}")
+        
         except Exception as e:
-            logging.error(f"Erreur interne:", str(e))
-            return abort(500, message="Erreur interne du serveur.")
-        return battery_status
+            logging.error(f"Erreur interne : {str(e)}")
+            abort(500, message="Erreur interne du serveur.")
  

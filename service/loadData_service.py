@@ -19,22 +19,28 @@ class LoadDataService:
     
     def read_load_data(self) -> LoadData:
         """
-        Récupère les données de dé&charge en temps réel.
+        Récupère les données de charge en temps réel.
         """
-        # Récupération des données et création d'une instance de LoadData
-        load_data = LoadData(
-            voltage = self.client.get_load_voltage(),
-            current = self.client.get_load_current(),
-            power = self.client.get_load_power()
-        )
-        # Validation des données via le schéma Marshmallow
         try:
-            load_data = load_data.to_dict()
-            LoadDataSchema().load(load_data)  # Validation stricte des données
+            # Récupération des données brutes
+            data = {
+                "voltage": self.client.get_load_voltage(),
+                "current": self.client.get_load_current(),
+                "power": self.client.get_load_power()
+            }
+
+            # Validation des données via le schéma Marshmallow
+            valid_data = LoadDataSchema().load(data)
+
+            # Création d'une instance de LoadData avec les données validées
+            load_data = LoadData(**valid_data)
+            return load_data
+
         except ValidationError as e:
-            return abort(400, message=f"Erreur de validation des données de charge : {e.messages}")
+            logging.error(f"Erreur de validation des données : {e.messages}")
+            abort(400, message=f"Erreur de validation des données de charge : {e.messages}")
+
         except Exception as e:
-            logging.error("Erreur interne:", str(e))
-            return abort(500, message="Erreur interne du serveur.")
-        return load_data
+            logging.error(f"Erreur interne : {str(e)}")
+            abort(500, message="Erreur interne du serveur.")
  

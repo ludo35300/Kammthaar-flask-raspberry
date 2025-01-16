@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields, validates, ValidationError
+from marshmallow import Schema, fields
 
 class EnergyStatisticsSchema(Schema):
     """Schéma pour valider les statistiques d'énergie."""
