@@ -25,7 +25,7 @@ class ControllerDataService:
             data = {
                 "temperature": self.client.get_controller_temperature(),
                 "device_over_temperature": self.client.is_device_over_temperature(),
-                "current_device_time": str(self.client.get_rtc()),
+                "current_device_time": str(self.client.get_rtc())
             }
             # Validation des données via le schéma Marshmallow
             valid_data = ControllerDataSchema().load(data)

@@ -6,7 +6,7 @@ from flask_jwt_extended import JWTManager
 
 from constantes.authentification import Authentification
 from controller.authentification_controller import authentification_controller
-from controller import batteryStatus_controller, chargingEquipmentStatus_controller, controllerData_controller, dailyStatistics_controller, dischargingEquipmentStatus_controller, energyStatistics_controller, loadData_controller, solarData_controller
+from controller import batteryParameters_controller,batteryStatus_controller, chargingEquipmentStatus_controller, controllerData_controller, dailyStatistics_controller, dischargingEquipmentStatus_controller, energyStatistics_controller, loadData_controller, solarData_controller
 from controller.serveur_controleur import serveur_controller
 
 from service.record_service import RecordService
@@ -48,6 +48,7 @@ def create_app():
     api = Api(app)
 
     # Enregistrement des blueprints
+    api.register_blueprint(batteryParameters_controller.blp_domaine_externe)
     api.register_blueprint(batteryStatus_controller.blp_domaine_externe)
     api.register_blueprint(chargingEquipmentStatus_controller.blp_domaine_externe)
     api.register_blueprint(controllerData_controller.blp_domaine_externe)
