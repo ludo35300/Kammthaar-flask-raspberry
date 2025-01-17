@@ -40,7 +40,38 @@ class BDDService:
         time.sleep(1)
             
     
-            
+    # Enregistrement des parametres de la batterie
+    def save_battery_parameters(self, batteryParameters: dict, timestamp):
+        fields = {
+            "rated_charging_current": batteryParameters["rated_charging_current"],
+            "rated_load_current": batteryParameters["rated_load_current"],
+            "real_rated_voltage": batteryParameters["real_rated_voltage"],
+            "battery_type": batteryParameters["battery_type"],
+            "battery_capacity": batteryParameters["battery_capacity"],
+            "temp_compensation_coefficient": batteryParameters["temp_compensation_coefficient"],
+            "over_voltage_disconnect": batteryParameters["over_voltage_disconnect"],
+            "charging_limit_voltage": batteryParameters["charging_limit_voltage"],
+            "over_voltage_reconnect": batteryParameters["over_voltage_reconnect"],
+            "equalize_charging_voltage": batteryParameters["equalize_charging_voltage"],
+            "boost_charging_voltage": batteryParameters["boost_charging_voltage"],
+            "float_charging_voltage": batteryParameters["float_charging_voltage"],
+            "boost_reconnect_voltage": batteryParameters["boost_reconnect_voltage"],
+            "low_voltage_reconnect": batteryParameters["low_voltage_reconnect"],
+            "under_voltage_recover": batteryParameters["under_voltage_recover"],
+            "under_voltage_warning": batteryParameters["under_voltage_warning"],
+            "low_voltage_disconnect": batteryParameters["low_voltage_disconnect"],
+            "discharging_limit_voltage": batteryParameters["discharging_limit_voltage"],
+            "battery_rated_voltage": batteryParameters["battery_rated_voltage"],
+            "default_load_mode": batteryParameters["default_load_mode"],
+            "equalize_duration": batteryParameters["equalize_duration"],
+            "boost_duration": batteryParameters["boost_duration"],
+            "battery_discharge": batteryParameters["battery_discharge"],
+            "battery_charge": batteryParameters["battery_charge"],
+            "charging_mode": batteryParameters["charging_mode"]
+        }
+        tags = {"device": "batteryParameters"}
+        self.save_data("batteryParameters", tags, fields, timestamp)
+        
     # Enregistrement du status de la batterie
     def save_battery_status(self, batteryStatus: dict, timestamp):
         fields = {

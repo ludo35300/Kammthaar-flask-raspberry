@@ -4,6 +4,7 @@ from constantes.authentification import Authentification
 from constantes.config import Config
 
 from service.bdd_service import BDDService
+from service.batteryParameters_service import BatteryParametersService
 from service.batteryStatus_service import BatterieStatusService
 from service.chargingEquipmentStatus_service import ChargingEquipmentStatusService
 from service.controllerData_service import ControllerDataService
@@ -13,6 +14,7 @@ from service.energyStatistics_service import EnergyStatisticsService
 from service.loadData_service import LoadDataService
 from service.solarData_service import SolarDataService
 
+from dto.batteryParameters_schema import BatteryParametersSchema
 from dto.batteryStatus_schema import BatteryStatusSchema
 from dto.chargingEquipmentStatus_schema import ChargingEquipmentStatusSchema
 from dto.controllerData_schema import ControllerDataSchema
@@ -26,6 +28,7 @@ class RecordService:
     def __init__(self):
         # Initialisation des services
         self.bdd_service = BDDService()
+        self.batteryParameters_service = BatteryParametersService()
         self.batteryStatus_service = BatterieStatusService()
         self.chargingEquipmentStatus_service = ChargingEquipmentStatusService()
         self.controllerData_service = ControllerDataService()
@@ -61,6 +64,7 @@ class RecordService:
                 new_data = {
                     "timestamp": datetime.now().isoformat(),
                     "data": {
+                        "batteryParameters": self.batteryParameters_service.read_battery_parameters_data().to_dict(),
                         "batteryStatus": self.batteryStatus_service.read_battery_status_data().to_dict(),
                         "chargingEquipmentStatus": self.chargingEquipmentStatus_service.read_charging_equipment_status_data().to_dict(),
                         "controllerData": self.controllerData_service.read_controller_data().to_dict(),
@@ -124,6 +128,8 @@ class RecordService:
                         timestamp_obj = datetime.fromisoformat(entry["timestamp"])
                         timestamp = int(timestamp_obj.timestamp() * 1e9)
                         
+                        batteryParameters = BatteryParametersSchema().load(entry["data"]["batteryParameters"])
+                        self.bdd_service.save_battery_parameters(batteryParameters, timestamp)
                         batteryStatus = BatteryStatusSchema().load(entry["data"]["batteryStatus"])
                         self.bdd_service.save_battery_status(batteryStatus, timestamp)
                         chargingEquipmentStatus = ChargingEquipmentStatusSchema().load(entry["data"]["chargingEquipmentStatus"])
