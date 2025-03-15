@@ -7,8 +7,6 @@ from service.controllerData_service import ControllerDataService
 from dto.controllerData_schema import ControllerDataSchema
 
 blp_domaine_externe = Blueprint('controllerData_controller', 'Données du controleur', url_prefix='/controller', description="Récupération des données du controlleur MPPT")
-
-# Créer une instance du service
 controllerData_service = ControllerDataService()
 
 @blp_domaine_externe.route('/realtime')
@@ -19,10 +17,5 @@ class ChargingEquipmentStatusStatusController(MethodView):
         """
         Récupère les données du controller en temps réel.
         """
-        try:
-            return controllerData_service.read_controller_data()
-        except ValidationError as e:
-            return {"msg": f"Erreur de validation: {e.messages}"}, 400
-        except Exception as e:
-            return {"msg": f"Erreur interne du serveur: {str(e)}"}, 500
+        return controllerData_service.read_controller_data()
 

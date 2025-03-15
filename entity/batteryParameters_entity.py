@@ -2,6 +2,7 @@ from dataclasses import asdict, dataclass
 
 @dataclass
 class BatteryParameters:
+    ''' Entity des paramètres de la batterie'''
     rated_charging_current: int
     rated_load_current: float
     real_rated_voltage: int

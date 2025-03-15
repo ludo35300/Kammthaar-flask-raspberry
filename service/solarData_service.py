@@ -21,22 +21,24 @@ class SolarDataService:
         """
         Récupère les données des panneaux solaires en temps réel.
         """
+        from app import mppt_lock  # Import du verrou pour éviter les appels simultanés au MPPT
         try:
-            # Récupération des données brutes
-            raw_data = {
-                "voltage": self.client.get_solar_voltage(),
-                "current": self.client.get_solar_current(),
-                "power": self.client.get_solar_power(),
-                "maximum_voltage_today": self.client.get_maximum_pv_voltage_today(),
-                "minimum_voltage_today": self.client.get_minimum_pv_voltage_today()
-            }
+            with mppt_lock:
+                # Récupération des données brutes
+                raw_data = {
+                    "voltage": self.client.get_solar_voltage(),
+                    "current": self.client.get_solar_current(),
+                    "power": self.client.get_solar_power(),
+                    "maximum_voltage_today": self.client.get_maximum_pv_voltage_today(),
+                    "minimum_voltage_today": self.client.get_minimum_pv_voltage_today()
+                }
 
-            # Validation des données via le schéma Marshmallow
-            valid_data = SolarDataSchema().load(raw_data)
+                # Validation des données via le schéma Marshmallow
+                valid_data = SolarDataSchema().load(raw_data)
 
-            # Création d'une instance de SolarData avec les données validées
-            solar_data = SolarData(**valid_data)
-            return solar_data
+                # Création d'une instance de SolarData avec les données validées
+                solar_data = SolarData(**valid_data)
+                return solar_data
 
         except ValidationError as e:
             logging.error(f"Erreur de validation des données : {e.messages}")

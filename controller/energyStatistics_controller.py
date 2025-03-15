@@ -17,12 +17,7 @@ class EnergyStatisticsController(MethodView):
     @blp_domaine_externe.response(200, EnergyStatisticsSchema())  # Sérialisation avec le schéma
     def get(self):
         """
-        Récupère les données de charge en temps réel.
+        Récupère les statistiques énergétiques en temps réel.
         """
-        try:
-            return energyStatistics_service.read_energy_statistics_data()
-        except ValidationError as e:
-            return {"msg": f"Erreur de validation: {e.messages}"}, 400
-        except Exception as e:
-            return {"msg": f"Erreur interne du serveur: {str(e)}"}, 500
+        return energyStatistics_service.read_energy_statistics_data()
 

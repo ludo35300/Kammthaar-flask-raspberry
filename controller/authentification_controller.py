@@ -12,7 +12,6 @@ def login():
     username = request.json.get("username")
     password = request.json.get("password")
 
-    # Exemple simplifié - Ajoute une vraie vérification des utilisateurs
     if username == Authentification.USERNAME and password == Authentification.MOT_DE_PASSE:
         access_token = create_access_token(identity=username)
         return jsonify(access_token=access_token)

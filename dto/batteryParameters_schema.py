@@ -1,8 +1,7 @@
 from marshmallow import Schema, fields
-from datetime import datetime
 
 class BatteryParametersSchema(Schema):
-    """Schéma pour valider les données du contrôleur."""
+    """Schéma pour valider les paramètres de la batterie."""
     rated_charging_current = fields.Integer(required=True, error_messages={"required": "Le courant de charge nominal est requis."})
     rated_load_current = fields.Float(required=True, error_messages={"required": "Le courant de charge maximal pour la charge est requis."})
     real_rated_voltage = fields.Integer(required=True, error_messages={"required": "La tension nominale réelle est requise."})

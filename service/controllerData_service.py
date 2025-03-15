@@ -20,24 +20,26 @@ class ControllerDataService:
         """
         Récupère les données du contrôleur en temps réel.
         """
+        from app import mppt_lock  # Import du verrou pour éviter les appels simultanés au MPPT
         try:
-            # Récupération des données brutes
-            data = {
-                "temperature": self.client.get_controller_temperature(),
-                "device_over_temperature": self.client.is_device_over_temperature(),
-                "current_device_time": str(self.client.get_rtc())
-            }
-            # Validation des données via le schéma Marshmallow
-            valid_data = ControllerDataSchema().load(data)
-            # Création d'une instance de ControllerData avec les données validées
-            controller_data = ControllerData(**valid_data)
-            return controller_data
+            with mppt_lock:
+                # Récupération des données brutes
+                data = {
+                    "temperature": self.client.get_controller_temperature(),
+                    "device_over_temperature": self.client.is_device_over_temperature(),
+                    "current_device_time": str(self.client.get_rtc())
+                }
+                # Validation des données via le schéma Marshmallow
+                valid_data = ControllerDataSchema().load(data)
+                # Création d'une instance de ControllerData avec les données validées
+                controller_data = ControllerData(**valid_data)
+                return controller_data
 
         except ValidationError as e:
-            logging.error(f"Erreur de validation des données : {e.messages}")
-            abort(400, message=f"Erreur de validation des données du contrôleur : {e.messages}")
+                logging.error(f"Erreur de validation des données : {e.messages}")
+                abort(400, message=f"Erreur de validation des données du contrôleur : {e.messages}")
 
         except Exception as e:
-            logging.error(f"Erreur interne : {str(e)}")
-            abort(500, message="Erreur interne du serveur.")
- 
+                logging.error(f"Erreur interne : {str(e)}")
+                abort(500, message="Erreur interne du serveur.")
+    

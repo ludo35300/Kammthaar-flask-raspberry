@@ -1,7 +1,7 @@
 from marshmallow import Schema, fields
 
 class EnergyStatisticsSchema(Schema):
-    """Schéma pour valider les statistiques d'énergie."""
+    """Schéma pour valider les statistiques de génération/consommation d'énergie."""
     consumed_today = fields.Float(required=True, error_messages={"required": "L'énergie consommée aujourd'hui est requise."})
     consumed_this_month = fields.Float(required=True, error_messages={"required": "L'énergie consommée ce mois est requise."})
     consumed_this_year = fields.Float(required=True, error_messages={"required": "L'énergie consommée cette année est requise."})

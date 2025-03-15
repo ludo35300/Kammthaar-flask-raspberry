@@ -21,31 +21,33 @@ class DischargingEquipmentStatusService:
         """
         Récupère les données de décharge en temps réel.
         """
+        from app import mppt_lock  # Import du verrou pour éviter les appels simultanés au MPPT
         try:
+            with mppt_lock:
             # Récupération des données brutes
-            data = {
-                "input_voltage_status": self.client.get_discharging_equipment_status()["input_voltage_status"],
-                "output_power_load": self.client.get_discharging_equipment_status()["output_power_load"],
-                "running": self.client.get_discharging_equipment_status()["running"],
-                "errors": {
-                    "short_circuit": self.client.get_discharging_equipment_status()["short_circuit"],
-                    "unable_to_discharge": self.client.get_discharging_equipment_status()["unable_to_discharge"],
-                    "unable_to_stop_discharging": self.client.get_discharging_equipment_status()["unable_to_stop_discharging"],
-                    "output_voltage_abnormal": self.client.get_discharging_equipment_status()["output_voltage_abnormal"],
-                    "input_over_voltage": self.client.get_discharging_equipment_status()["input_over_voltage"],
-                    "short_circuit_high_voltage_side": self.client.get_discharging_equipment_status()["short_circuit_in_high_voltage_side"],
-                    "boost_over_voltage": self.client.get_discharging_equipment_status()["boost_over_voltage"],
-                    "output_over_voltage": self.client.get_discharging_equipment_status()["output_over_voltage"],
-                    "fault": self.client.get_discharging_equipment_status()["fault"],
+                data = {
+                    "input_voltage_status": self.client.get_discharging_equipment_status()["input_voltage_status"],
+                    "output_power_load": self.client.get_discharging_equipment_status()["output_power_load"],
+                    "running": self.client.get_discharging_equipment_status()["running"],
+                    "errors": {
+                        "short_circuit": self.client.get_discharging_equipment_status()["short_circuit"],
+                        "unable_to_discharge": self.client.get_discharging_equipment_status()["unable_to_discharge"],
+                        "unable_to_stop_discharging": self.client.get_discharging_equipment_status()["unable_to_stop_discharging"],
+                        "output_voltage_abnormal": self.client.get_discharging_equipment_status()["output_voltage_abnormal"],
+                        "input_over_voltage": self.client.get_discharging_equipment_status()["input_over_voltage"],
+                        "short_circuit_high_voltage_side": self.client.get_discharging_equipment_status()["short_circuit_in_high_voltage_side"],
+                        "boost_over_voltage": self.client.get_discharging_equipment_status()["boost_over_voltage"],
+                        "output_over_voltage": self.client.get_discharging_equipment_status()["output_over_voltage"],
+                        "fault": self.client.get_discharging_equipment_status()["fault"],
+                    }
                 }
-            }
 
-            # Validation des données via le schéma Marshmallow
-            valid_data = DischargingEquipmentStatusSchema().load(data)
+                # Validation des données via le schéma Marshmallow
+                valid_data = DischargingEquipmentStatusSchema().load(data)
 
-            # Création d'une instance de DischargingEquipmentStatus avec les données validées
-            discharging_status = DischargingEquipmentStatus(**valid_data)
-            return discharging_status
+                # Création d'une instance de DischargingEquipmentStatus avec les données validées
+                discharging_status = DischargingEquipmentStatus(**valid_data)
+                return discharging_status
 
         except ValidationError as e:
             logging.error(f"Erreur de validation des données : {e.messages}")

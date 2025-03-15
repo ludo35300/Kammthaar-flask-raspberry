@@ -36,7 +36,6 @@ class DischargingEquipmentStatusSchema(Schema):
         required=True,
         error_messages={"required": "Les erreurs de l'équipement de décharge sont obligatoires."}
     )
-
     # Autorise les paramètres inconnus mais les exclut
     class Meta:
         unknown = "exclude"

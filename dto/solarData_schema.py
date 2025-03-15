@@ -1,6 +1,7 @@
 from marshmallow import Schema, fields
     
 class SolarDataSchema(Schema):
+    """Schéma pour valider les données du panneau solaire."""
     voltage = fields.Float(required=True, error_messages={"required": "Aucune donnée sur la tension des panneaux solaire."})
     current = fields.Float(required=True, error_messages={"required": "Aucune donnée sur le courant des panneaux solaire."})
     power = fields.Float(required=True, error_messages={"required": "Aucune donnée sur la puissance des panneaux solaire."})

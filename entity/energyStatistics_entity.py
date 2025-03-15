@@ -2,6 +2,7 @@ from dataclasses import asdict, dataclass
 
 @dataclass
 class EnergyStatistics:
+    ''' Entity des statistiques énergétiques '''
     consumed_today: float
     consumed_this_month: float
     consumed_this_year: float

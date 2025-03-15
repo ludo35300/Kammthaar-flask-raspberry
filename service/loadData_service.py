@@ -21,20 +21,22 @@ class LoadDataService:
         """
         Récupère les données de charge en temps réel.
         """
+        from app import mppt_lock  # Import du verrou pour éviter les appels simultanés au MPPT
         try:
-            # Récupération des données brutes
-            data = {
-                "voltage": self.client.get_load_voltage(),
-                "current": self.client.get_load_current(),
-                "power": self.client.get_load_power()
-            }
+            with mppt_lock:
+                # Récupération des données brutes
+                data = {
+                    "voltage": self.client.get_load_voltage(),
+                    "current": self.client.get_load_current(),
+                    "power": self.client.get_load_power()
+                }
 
-            # Validation des données via le schéma Marshmallow
-            valid_data = LoadDataSchema().load(data)
+                # Validation des données via le schéma Marshmallow
+                valid_data = LoadDataSchema().load(data)
 
-            # Création d'une instance de LoadData avec les données validées
-            load_data = LoadData(**valid_data)
-            return load_data
+                # Création d'une instance de LoadData avec les données validées
+                load_data = LoadData(**valid_data)
+                return load_data
 
         except ValidationError as e:
             logging.error(f"Erreur de validation des données : {e.messages}")

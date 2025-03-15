@@ -6,6 +6,8 @@ from entity.batteryStatus_entity import BatteryStatus
 from dto.batteryStatus_schema import BatteryStatusSchema  
 from marshmallow.exceptions import ValidationError
 
+
+
 class BatterieStatusService:
     """
     Service pour interagir avec le contrôleur de charge Epever et récupérer les données de status de la batterie.
@@ -20,19 +22,20 @@ class BatterieStatusService:
         """
         Récupère les données de status de la batterie en temps réel.
         """
+        from app import mppt_lock  # Import du verrou pour éviter les appels simultanés au MPPT
         try:
-            data = {
-                "voltage": self.client.get_battery_voltage(),
-                "current": self.client.get_battery_current(),
-                "power": self.client.get_battery_power(),
-                "state_of_charge": self.client.get_battery_state_of_charge(),
-                "temperature": self.client.get_battery_temperature(),
-                # "remote_temperature": self.client.get_remote_battery_temperature(),
-                "status": self.client.get_battery_status(),
-            }
-            valid_data = BatteryStatusSchema().load(data)   # Validation des données via le schéma Marshmallow
-            battery_status = BatteryStatus(**valid_data)    # Création d'une instance de BatteryStatus avec les données validées
-            return battery_status
+            with mppt_lock:
+                data = {
+                    "voltage": self.client.get_battery_voltage(),
+                    "current": self.client.get_battery_current(),
+                    "power": self.client.get_battery_power(),
+                    "state_of_charge": self.client.get_battery_state_of_charge(),
+                    "temperature": self.client.get_battery_temperature(),
+                    "status": self.client.get_battery_status(),
+                }
+                valid_data = BatteryStatusSchema().load(data)   # Validation des données via le schéma Marshmallow
+                battery_status = BatteryStatus(**valid_data)    # Création d'une instance de BatteryStatus avec les données validées
+                return battery_status
 
         except ValidationError as e:
             logging.error(f"Erreur de validation des données : {e.messages}")

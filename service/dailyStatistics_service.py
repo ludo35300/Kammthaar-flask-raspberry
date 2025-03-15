@@ -21,20 +21,22 @@ class DailyStatisticsService:
         """
         Récupère les données de statistiques journalières en temps réel.
         """
+        from app import mppt_lock  # Import du verrou pour éviter les appels simultanés au MPPT
         try:
-            # Récupération des données brutes
-            data = {
-                "maximum_battery_voltage_today": self.client.get_maximum_battery_voltage_today(),
-                "minimum_battery_voltage_today": self.client.get_minimum_battery_voltage_today(),
-                "day_time": self.client.is_day(),
-                "night_time": self.client.is_night(),
-            }
-            # Validation des données via le schéma Marshmallow
-            valid_data = DailyStatisticsSchema().load(data)
+            with mppt_lock:
+                # Récupération des données brutes
+                data = {
+                    "maximum_battery_voltage_today": self.client.get_maximum_battery_voltage_today(),
+                    "minimum_battery_voltage_today": self.client.get_minimum_battery_voltage_today(),
+                    "day_time": self.client.is_day(),
+                    "night_time": self.client.is_night(),
+                }
+                # Validation des données via le schéma Marshmallow
+                valid_data = DailyStatisticsSchema().load(data)
 
-            # Création d'une instance de DailyStatistics avec les données validées
-            daily_statistics_data = DailyStatistics(**valid_data)
-            return daily_statistics_data
+                # Création d'une instance de DailyStatistics avec les données validées
+                daily_statistics_data = DailyStatistics(**valid_data)
+                return daily_statistics_data
 
         except ValidationError as e:
             logging.error(f"Erreur de validation des données : {e.messages}")

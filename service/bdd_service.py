@@ -36,7 +36,6 @@ class BDDService:
         
         point = point.time(timestamp)
         result = self.write_api.write(bucket=Authentification.INFLUXDB_BUCKET, org=Authentification.INFLUXDB_ORG, record=point)
-        logging.info(f"Données de {measurement_name} sauvegardées avec succès")
         time.sleep(1)
             
     

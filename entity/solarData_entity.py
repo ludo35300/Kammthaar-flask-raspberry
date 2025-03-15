@@ -2,6 +2,7 @@ from dataclasses import asdict, dataclass
 
 @dataclass
 class SolarData:
+    ''' Entity des données du panneau solaire '''
     voltage: float
     current: float
     power: float

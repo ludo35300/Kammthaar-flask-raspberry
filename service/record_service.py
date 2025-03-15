@@ -84,7 +84,6 @@ class RecordService:
             except Exception as e:
                 logging.error(f"Erreur lors du traitement périodique : {e}")
                 traceback.print_exc()
-            logging.info(f"Pause de {interval} secondes avant le prochain cycle...")
             time.sleep(interval)
 
     def save_local_data(self, data):
@@ -100,15 +99,11 @@ class RecordService:
                         # Lecture des données existantes
                         local_data = json.load(f)
                     except json.JSONDecodeError:
-                        # Si le fichier est vide ou corrompu, on initialise une liste vide
-                        logging.info(f"Fichier JSON vide ou corrompu, initialisation des données.")
-                        local_data = []
-                    local_data.append(data)
-                    # Réécriture des données dans le fichier
+                        local_data = []     # Si le fichier est vide ou corrompu, on initialise une liste vide
+                    local_data.append(data) # Réécriture des données dans le fichier
                     f.seek(0)
                     json.dump(local_data, f, indent=4)
                     f.truncate()  # Supprime tout contenu résiduel au-delà des nouvelles données
-                logging.info(f"Données sauvegardées localement.")
         except Exception as e:
             logging.error(f"Erreur lors de la sauvegarde locale : {e}")
             traceback.print_exc()
@@ -152,7 +147,7 @@ class RecordService:
                         traceback.print_exc()
                 # Vider le fichier après synchronisation
                 open(Config.LOCAL_STORAGE_PATH, "w").close()
-                logging.info(f"Données locales synchronisées et fichier local vidé.")
+                logging.info(f"Synchronisation terminée.")
         except Exception as e:
             logging.error(f"Erreur lors de la synchronisation des données locales : {e}")
             traceback.print_exc()

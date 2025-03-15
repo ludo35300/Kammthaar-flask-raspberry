@@ -21,25 +21,27 @@ class EnergyStatisticsService:
         """
         Récupère les données de statistiques d'énergie en temps réel.
         """
+        from app import mppt_lock  # Import du verrou pour éviter les appels simultanés au MPPT
         try:
-            # Récupération des données brutes
-            data = {
-                "consumed_today": self.client.get_consumed_energy_today(),
-                "consumed_this_month": self.client.get_consumed_energy_this_month(),
-                "consumed_this_year": self.client.get_consumed_energy_this_year(),
-                "total_consumed": self.client.get_total_consumed_energy(),
-                "generated_today": self.client.get_generated_energy_today(),
-                "generated_this_month": self.client.get_generated_energy_this_month(),
-                "generated_this_year": self.client.get_generated_energy_this_year(),
-                "total_generated": self.client.get_total_generated_energy()
-            }
+            with mppt_lock:
+                # Récupération des données brutes
+                data = {
+                    "consumed_today": self.client.get_consumed_energy_today(),
+                    "consumed_this_month": self.client.get_consumed_energy_this_month(),
+                    "consumed_this_year": self.client.get_consumed_energy_this_year(),
+                    "total_consumed": self.client.get_total_consumed_energy(),
+                    "generated_today": self.client.get_generated_energy_today(),
+                    "generated_this_month": self.client.get_generated_energy_this_month(),
+                    "generated_this_year": self.client.get_generated_energy_this_year(),
+                    "total_generated": self.client.get_total_generated_energy()
+                }
 
-            # Validation des données via le schéma Marshmallow
-            valid_data = EnergyStatisticsSchema().load(data)
+                # Validation des données via le schéma Marshmallow
+                valid_data = EnergyStatisticsSchema().load(data)
 
-            # Création d'une instance de EnergyStatistics avec les données validées
-            energy_statistics = EnergyStatistics(**valid_data)
-            return energy_statistics
+                # Création d'une instance de EnergyStatistics avec les données validées
+                energy_statistics = EnergyStatistics(**valid_data)
+                return energy_statistics
 
         except ValidationError as e:
             logging.error(f"Erreur de validation des données : {e.messages}")

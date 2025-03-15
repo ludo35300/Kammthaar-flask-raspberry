@@ -3,6 +3,7 @@ from typing import Dict
 
 @dataclass
 class ChargingEquipmentStatus:
+    ''' Entity des données de charge'''
     input_voltage_status: str
     charging_status: str
     running: bool
